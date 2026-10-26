@@ -25,6 +25,12 @@ zebra stripes, focus peaking, pre-shots, timer and repeat modes, voice/audio/rem
 remotes, photo stamps, geotagging, video with log profiles, slow motion and time-lapse, and more. See the
 [Open Camera manual](https://opencamera.org.uk/help.html) for those features.
 
+## Installing
+
+Every push to `main` is built by GitHub Actions. On your phone, open this repository's **Releases** page,
+download `AubCamera.apk` from the "latest" release, and open it (allow "install unknown apps" for your browser
+when asked). New builds install as updates over the old one.
+
 ## Building
 
 Requirements: Android Studio (or the Android SDK command line tools) with JDK 17, and internet access the
