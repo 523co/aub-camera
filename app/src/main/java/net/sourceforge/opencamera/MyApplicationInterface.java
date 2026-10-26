@@ -82,6 +82,7 @@ public class MyApplicationInterface extends BasicApplicationInterface {
         CPL,
         PS2,
         Digicam,
+        Disposable,
         // camera vendor extensions:
         X_Auto,
         X_HDR,
@@ -101,6 +102,8 @@ public class MyApplicationInterface extends BasicApplicationInterface {
                 return AubEffects.Effect.PS2;
             case Digicam:
                 return AubEffects.Effect.DIGICAM;
+            case Disposable:
+                return AubEffects.Effect.DISPOSABLE;
             default:
                 return AubEffects.Effect.NONE;
         }
@@ -1786,6 +1789,8 @@ public class MyApplicationInterface extends BasicApplicationInterface {
                     return PhotoMode.PS2;
                 case "preference_photo_mode_aub_digicam":
                     return PhotoMode.Digicam;
+                case "preference_photo_mode_aub_disposable":
+                    return PhotoMode.Disposable;
             }
         }
         boolean x_auto = photo_mode_pref.equals("preference_photo_mode_x_auto");

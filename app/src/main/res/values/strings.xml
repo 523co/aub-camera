@@ -796,6 +796,8 @@
     <string name="photo_mode_aub_ps2_full">PS2 style</string>
     <string name="photo_mode_aub_digicam">2000s</string> <!-- keep short, as this shows in the popup menu -->
     <string name="photo_mode_aub_digicam_full">2000s digicam</string>
+    <string name="photo_mode_aub_disposable">35mm</string> <!-- keep short, as this shows in the popup menu -->
+    <string name="photo_mode_aub_disposable_full">Disposable camera</string>
     <string name="aub_cpl_info">CPL mode imitates a circular polarising filter: deeper blue skies, less glare on water, glass and leaves, and less haze.\n\nA real polariser works optically, so if you have a clip-on CPL, choose \"Physical filter attached\" under Settings > Aub Camera modes. A live glare meter then helps you find the best rotation: turn the filter slowly and stop when the meter shows \"best\". Locking white balance before rotating stops the colour shifting.\n\nThe effect is strongest with the sun to your side.</string>
     <string name="aub_portrait_info">Portrait mode separates your subject from the background on-device and blurs the background like a fast lens.\n\nIt works best with people (including hair and clothes), and also recognises pets and many common objects. Keep some distance between the subject and the background for the most convincing result.\n\nPortrait photos take a moment longer to save.</string>
     <string name="aub_cpl_meter_label">Glare</string>
@@ -804,7 +806,7 @@
 
     <!-- Aub Camera settings -->
     <string name="preference_screen_aub_modes">Aub Camera modes</string>
-    <string name="preference_screen_aub_modes_summary">Portrait, CPL filter, PS2 style and 2000s digicam</string>
+    <string name="preference_screen_aub_modes_summary">Portrait, CPL filter, PS2 style, 2000s digicam and disposable camera</string>
     <string name="preference_category_aub_general">General</string>
     <string name="preference_aub_live_preview">Live look preview</string>
     <string name="preference_aub_live_preview_summary">Show an approximate preview of the selected look in the viewfinder</string>
@@ -825,6 +827,11 @@
     <string name="preference_aub_digicam_stamp_real">Today\'s date</string>
     <string name="preference_aub_digicam_stamp_retro">Retro year (\'04)</string>
     <string name="preference_aub_digicam_authentic_res">Authentic 2 megapixels</string>
+    <string name="preference_category_aub_disposable">Disposable camera</string>
+    <string name="preference_aub_disposable_flash">Flash look</string>
+    <string name="preference_aub_disposable_flash_summary">Bright subject and dark background, like the built-in flash. Best indoors and at night</string>
+    <string name="preference_aub_disposable_leak">Light leaks</string>
+    <string name="preference_aub_disposable_leak_summary">An orange streak of light bleeding in from the edge of the frame, different for every photo</string>
     <string name="preference_aub_digicam_authentic_res_summary">Save at 1600 x 1200, like the cameras of the era. If off, saves at up to 3200 pixels wide</string>
     <string name="preference_aub_strength_light">Light</string>
     <string name="preference_aub_strength_medium">Medium</string>

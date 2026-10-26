@@ -216,6 +216,8 @@ public class PopupView extends LinearLayout {
                 photo_mode_values.add(MyApplicationInterface.PhotoMode.PS2);
                 photo_modes.add(getResources().getString(use_expanded_menu ? R.string.photo_mode_aub_digicam_full : R.string.photo_mode_aub_digicam));
                 photo_mode_values.add(MyApplicationInterface.PhotoMode.Digicam);
+                photo_modes.add(getResources().getString(use_expanded_menu ? R.string.photo_mode_aub_disposable_full : R.string.photo_mode_aub_disposable));
+                photo_mode_values.add(MyApplicationInterface.PhotoMode.Disposable);
             }
             if( main_activity.supportsFastBurst() ) {
                 photo_modes.add(getResources().getString(use_expanded_menu ? R.string.photo_mode_fast_burst_full : R.string.photo_mode_fast_burst));
@@ -1159,6 +1161,9 @@ public class PopupView extends LinearLayout {
                 case Digicam:
                     toast_message = getResources().getString(R.string.photo_mode_aub_digicam_full);
                     break;
+                case Disposable:
+                    toast_message = getResources().getString(R.string.photo_mode_aub_disposable_full);
+                    break;
             }
             final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(main_activity);
             SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -1213,6 +1218,9 @@ public class PopupView extends LinearLayout {
                     break;
                 case Digicam:
                     editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_aub_digicam");
+                    break;
+                case Disposable:
+                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_aub_disposable");
                     break;
                 default:
                     if (MyDebug.LOG)

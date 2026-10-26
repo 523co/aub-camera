@@ -7,7 +7,7 @@ package net.sourceforge.opencamera;
 import android.os.Bundle;
 import android.util.Log;
 
-/** Settings for the Aub Camera photo modes (Portrait, CPL, PS2, Digicam). */
+/** Settings for the Aub Camera photo modes (Portrait, CPL, PS2, Digicam, Disposable). */
 public class PreferenceSubAubModes extends PreferenceSubScreen {
     private static final String TAG = "PreferenceSubAubModes";
 

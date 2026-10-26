@@ -39,6 +39,8 @@ public class PreferenceKeys {
     public static final String AubPs2ScanlinesPreferenceKey = "preference_aub_ps2_scanlines";
     public static final String AubDigicamStampPreferenceKey = "preference_aub_digicam_stamp";
     public static final String AubDigicamAuthenticResPreferenceKey = "preference_aub_digicam_authentic_res";
+    public static final String AubDisposableFlashPreferenceKey = "preference_aub_disposable_flash";
+    public static final String AubDisposableLeakPreferenceKey = "preference_aub_disposable_leak";
 
     /** If this preference is set, no longer show the raw info dialog.
      */

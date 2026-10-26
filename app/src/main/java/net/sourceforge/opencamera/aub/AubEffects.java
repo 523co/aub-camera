@@ -16,7 +16,7 @@ import net.sourceforge.opencamera.PreferenceKeys;
 import java.io.ByteArrayOutputStream;
 import java.util.Date;
 
-/** Entry point for the Aub Camera photo modes (Portrait, CPL, PS2 and Digicam): turns preferences
+/** Entry point for the Aub Camera photo modes (Portrait, CPL, PS2, Digicam and Disposable): turns preferences
  *  into effect parameters, and applies effects to android.graphics.Bitmaps, both for saved photos
  *  and for the live look preview in the viewfinder.
  */
@@ -31,7 +31,8 @@ public final class AubEffects {
         PORTRAIT,
         CPL,
         PS2,
-        DIGICAM
+        DIGICAM,
+        DISPOSABLE
     }
 
     public enum CplType {
@@ -48,15 +49,19 @@ public final class AubEffects {
         public final boolean ps2_scanlines;
         public final boolean digicam_authentic_res;
         public final int digicam_stamp;
+        public final boolean disposable_flash;
+        public final boolean disposable_leak;
         public final Date date;
 
-        public Params(Effect effect, float strength, CplType cpl_type, boolean ps2_scanlines, boolean digicam_authentic_res, int digicam_stamp, Date date) {
+        public Params(Effect effect, float strength, CplType cpl_type, boolean ps2_scanlines, boolean digicam_authentic_res, int digicam_stamp, boolean disposable_flash, boolean disposable_leak, Date date) {
             this.effect = effect;
             this.strength = strength;
             this.cpl_type = cpl_type;
             this.ps2_scanlines = ps2_scanlines;
             this.digicam_authentic_res = digicam_authentic_res;
             this.digicam_stamp = digicam_stamp;
+            this.disposable_flash = disposable_flash;
+            this.disposable_leak = disposable_leak;
             this.date = date;
         }
 
@@ -73,6 +78,7 @@ public final class AubEffects {
                 case CPL: return "_CPL";
                 case PS2: return "_PS2";
                 case DIGICAM: return "_Digicam";
+                case DISPOSABLE: return "_Disposable";
                 default: return "";
             }
         }
@@ -120,7 +126,9 @@ public final class AubEffects {
                 stamp = DigicamFilter.STAMP_REAL;
                 break;
         }
-        return new Params(effect, strength, cpl_type, scanlines, authentic, stamp, date == null ? new Date() : date);
+        boolean flash = sp.getBoolean(PreferenceKeys.AubDisposableFlashPreferenceKey, false);
+        boolean leak = sp.getBoolean(PreferenceKeys.AubDisposableLeakPreferenceKey, true);
+        return new Params(effect, strength, cpl_type, scanlines, authentic, stamp, flash, leak, date == null ? new Date() : date);
     }
 
     private static float parsePercent(String s) {
@@ -193,6 +201,11 @@ public final class AubEffects {
                 result = jpegCrunch(toMutableBitmap(out), 64);
                 break;
             }
+            case DISPOSABLE: {
+                int seed = (int)(params.date.getTime() ^ (params.date.getTime() >>> 32));
+                DisposableFilter.apply(new BitmapRows(bitmap), params.disposable_flash, params.disposable_leak, seed);
+                break;
+            }
             case PORTRAIT: {
                 int [] dims = AubImage.fitLongSide(bitmap.getWidth(), bitmap.getHeight(), PortraitCompositor.WORK_LONG_SIDE);
                 AubImage.Img work = AubImage.downscaleArea(new BitmapRows(bitmap), dims[0], dims[1]);
@@ -259,6 +272,10 @@ public final class AubEffects {
                 AubImage.Img out = DigicamFilter.apply(img, false, DigicamFilter.STAMP_OFF, params.date, 1234);
                 return toMutableBitmap(out);
             }
+            case DISPOSABLE:
+                // no light leak, as it's different for every photo; a new grain pattern each frame looks like film
+                DisposableFilter.apply(img, params.disposable_flash, false, (int)System.nanoTime());
+                return toMutableBitmap(img);
             case PORTRAIT: {
                 int [] dims = AubImage.fitLongSide(img.w, img.h, 320);
                 AubImage.Img work = dims[0] == img.w && dims[1] == img.h ? img : AubImage.downscaleArea(img, dims[0], dims[1]);

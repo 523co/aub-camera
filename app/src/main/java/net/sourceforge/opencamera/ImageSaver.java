@@ -202,7 +202,7 @@ public class ImageSaver extends Thread {
         final String custom_tag_artist;
         final String custom_tag_copyright;
         final int sample_factor; // sampling factor for thumbnail, higher means lower quality
-        AubEffects.Params aub_params; // Aub Camera photo mode effect to apply (Portrait, CPL, PS2, Digicam), or null
+        AubEffects.Params aub_params; // Aub Camera photo mode effect to apply (Portrait, CPL, PS2, Digicam, Disposable), or null
 
         Request(Type type,
                 ProcessType process_type,
@@ -2948,7 +2948,7 @@ public class ImageSaver extends Thread {
             bitmap = mirrorImage(data, bitmap);
         }
         if( request.aub_params != null && request.aub_params.altersImage() ) {
-            // Aub Camera photo modes: Portrait, CPL, PS2 and Digicam
+            // Aub Camera photo modes: Portrait, CPL, PS2, Digicam and Disposable
             if( bitmap == null ) {
                 bitmap = loadBitmapWithRotation(data, true);
                 if( bitmap == null ) {

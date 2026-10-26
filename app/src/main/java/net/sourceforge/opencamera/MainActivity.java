@@ -6298,7 +6298,7 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
         return this.supports_auto_stabilise;
     }
 
-    /** Whether the Aub Camera photo modes (Portrait, CPL, PS2, Digicam) are available. They post-process
+    /** Whether the Aub Camera photo modes (Portrait, CPL, PS2, Digicam, Disposable) are available. They post-process
      *  the JPEG, so need JPEG output - they're always available as RAW isn't used in these modes.
      */
     public boolean supportsAubPhotoModes() {
@@ -6528,6 +6528,9 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
                 break;
             case Digicam:
                 photo_mode_string = getResources().getString(R.string.photo_mode_aub_digicam_full);
+                break;
+            case Disposable:
+                photo_mode_string = getResources().getString(R.string.photo_mode_aub_disposable_full);
                 break;
         }
         return photo_mode_string;

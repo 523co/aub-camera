@@ -4,8 +4,8 @@
 
 # Aub Camera
 
-**Open Camera, plus four new ways to take a photo.**<br>
-Portrait bokeh · polariser · PS2 · 2000s digicam. All on-device, no ads, no tracking.
+**Open Camera, plus five new ways to take a photo.**<br>
+Portrait bokeh · polariser · PS2 · 2000s digicam · disposable film. All on-device, no ads, no tracking.
 
 [![Build APK](https://github.com/523co/aub-camera/actions/workflows/build-apk.yml/badge.svg)](https://github.com/523co/aub-camera/actions/workflows/build-apk.yml)
 [![Download APK](https://img.shields.io/badge/download-AubCamera.apk-7b3fa0?logo=android&logoColor=white)](https://github.com/523co/aub-camera/releases/download/latest/AubCamera.apk)
@@ -13,7 +13,7 @@ Portrait bokeh · polariser · PS2 · 2000s digicam. All on-device, no ads, no t
 [![Licence: GPL v3+](https://img.shields.io/badge/licence-GPL%20v3%2B-blue)](gpl-3.0.txt)
 
 [**Download**](https://github.com/523co/aub-camera/releases/download/latest/AubCamera.apk) ·
-[Modes](#-the-four-new-modes) ·
+[Modes](#-the-five-new-modes) ·
 [Building](#building) ·
 [Privacy](PRIVACY.md)
 
@@ -22,9 +22,9 @@ Portrait bokeh · polariser · PS2 · 2000s digicam. All on-device, no ads, no t
 ---
 
 Aub Camera is a camera app for Android, built on [Open Camera](https://opencamera.org.uk/) by Mark Harman.
-It keeps **every Open Camera feature** and adds four photo modes, all picked from the photo mode popup.
+It keeps **every Open Camera feature** and adds five photo modes, all picked from the photo mode popup.
 
-## ✨ The four new modes
+## ✨ The five new modes
 
 <table>
 <tr>
@@ -70,10 +70,22 @@ classic orange seven-segment date imprint (today's date, a retro '04 year, or of
 
 </td>
 </tr>
+<tr>
+<td colspan="2" valign="top">
+
+### 🎞️ 35mm (disposable camera)
+A single-use film camera, back from the chemist: warm consumer colour film with yellow highlights, slightly
+green shadows and faded blacks, highlights that roll off gently instead of clipping, clumpy film grain, a
+red-orange halation glow around bright lights, and a plastic lens with soft, colour-fringed corners and heavy
+vignetting. Optional **light leaks** (an orange streak from the end of the frame, different on every shot) and
+an optional **flash look**: bright subject, background falling into darkness, for indoor and night shots.
+
+</td>
+</tr>
 </table>
 
-All four show an approximate **live preview of the look in the viewfinder** (you can turn it off) and save
-with a filename suffix: `_Portrait`, `_CPL`, `_PS2` or `_Digicam`. Everything runs on the phone. Nothing is
+All five show an approximate **live preview of the look in the viewfinder** (you can turn it off) and save
+with a filename suffix: `_Portrait`, `_CPL`, `_PS2`, `_Digicam` or `_Disposable`. Everything runs on the phone. Nothing is
 uploaded.
 
 > [!NOTE]
@@ -137,6 +149,7 @@ open it.
   | `CplFilter` | Simulated polariser, and the glare score used by the physical-filter meter |
   | `Ps2Filter` | Console look |
   | `DigicamFilter` | 2000s digicam look and the seven-segment date imprint |
+  | `DisposableFilter` | Disposable film camera look: film colour, grain, halation, flash and light leaks |
   | `PortraitCompositor` | Mask refinement, bokeh rendering and full-resolution compositing |
   | `PortraitSegmenter` | MediaPipe segmentation (selfie multiclass, with DeepLab v3 as fallback) |
   | `AubEffects` | Settings, Bitmap glue, and the live viewfinder preview |

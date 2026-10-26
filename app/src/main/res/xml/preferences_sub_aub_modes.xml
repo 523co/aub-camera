@@ -89,4 +89,24 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:key="preference_category_aub_disposable"
+        android:title="@string/preference_category_aub_disposable">
+
+        <SwitchPreference
+            android:key="preference_aub_disposable_flash"
+            android:title="@string/preference_aub_disposable_flash"
+            android:summary="@string/preference_aub_disposable_flash_summary"
+            android:defaultValue="false"
+            />
+
+        <SwitchPreference
+            android:key="preference_aub_disposable_leak"
+            android:title="@string/preference_aub_disposable_leak"
+            android:summary="@string/preference_aub_disposable_leak_summary"
+            android:defaultValue="true"
+            />
+
+    </PreferenceCategory>
+
 </PreferenceScreen>
