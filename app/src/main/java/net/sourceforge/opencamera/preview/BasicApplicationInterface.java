@@ -440,6 +440,11 @@ public abstract class BasicApplicationInterface implements ApplicationInterface 
     }
 
     @Override
+    public void onBarcodeScanned(String text, String format) {
+
+    }
+
+    @Override
     public void startingVideo() {
 
     }

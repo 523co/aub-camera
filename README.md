@@ -22,7 +22,21 @@ Portrait bokeh · polariser · PS2 · 2000s digicam · disposable film. All on-d
 ---
 
 Aub Camera is a camera app for Android, built on [Open Camera](https://opencamera.org.uk/) by Mark Harman.
-It keeps **every Open Camera feature** and adds five photo modes, all picked from the photo mode popup.
+It keeps **every Open Camera feature**, wraps it in a clean [GrapheneOS Camera](https://github.com/GrapheneOS/Camera)
+style screen, and adds five photo modes plus a QR / barcode scanner.
+
+## 📷 The camera screen
+
+Laid out like GrapheneOS Camera: flash on the left, a ⌄ button in the middle for quick settings, and the
+settings gear on the right. The viewfinder sits below them. At the bottom are the zoom chips (0.5× / 1× /
+2× / 5×, as the phone allows), then a strip of **mode tabs**:
+Portrait · CPL · PS2 · 2000s · 35mm · Photo · Video · Scan (and Night, on phones with a vendor night mode).
+Tap a tab or swipe across the viewfinder to change mode. Below them are the round gallery thumbnail, the
+shutter and the switch camera button. The screen stays in portrait and the icons turn to stay upright.
+The other Open Camera photo modes (HDR, DRO, panorama, bursts...) are still in the quick settings and count as Photo.
+
+**Scan** reads QR codes, Data Matrix, Aztec, PDF417 and common barcodes, on the phone, from the square in
+the middle of the viewfinder. You can then open a link, copy the text, or share it.
 
 ## ✨ The five new modes
 
@@ -165,8 +179,9 @@ photo in memory.
 
 ## 🔒 Privacy
 
-No analytics, no ads, no tracking, and photos are never uploaded for processing. The full policy is in
-[PRIVACY.md](PRIVACY.md).
+No analytics, no ads, no tracking, and photos are never uploaded for processing. As in GrapheneOS Camera,
+location tagging is off and device details (make, model, camera settings) are removed from photo metadata by
+default; both can be changed in Settings. The full policy is in [PRIVACY.md](PRIVACY.md).
 
 ## Licence
 
@@ -183,6 +198,7 @@ Mark Harman is not responsible for this modified version. Please
 <br>
 
 * [MediaPipe Tasks](https://github.com/google-ai-edge/mediapipe): Apache License 2.0
+* [ZXing](https://github.com/zxing/zxing) (QR / barcode scanning): Apache License 2.0
 * MediaPipe image segmentation models (SelfieMulticlass, DeepLab v3), downloaded at build time: see their
   model cards on the [MediaPipe image segmentation page](https://ai.google.dev/edge/mediapipe/solutions/vision/image_segmenter)
 * AndroidX libraries: Apache License 2.0

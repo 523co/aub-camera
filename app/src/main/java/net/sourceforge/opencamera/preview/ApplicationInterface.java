@@ -210,6 +210,7 @@ public interface ApplicationInterface {
     // methods that transmit information/events (up to the Application whether to do anything or not)
     void cameraSetup(); // called when the camera is (re-)set up - should update UI elements/parameters that depend on camera settings
     void touchEvent(MotionEvent event);
+    void onBarcodeScanned(String text, String format); // Aub Camera: a QR code or barcode was found in the viewfinder (see Preview.setAubBarcodeScan())
     void startingVideo(); // called just before video recording starts
     void startedVideo(); // called just after video recording starts
     void stoppingVideo(); // called just before video recording stops; note that if startingVideo() is called but then video recording fails to start, this method will still be called, but startedVideo() and stoppedVideo() won't be called

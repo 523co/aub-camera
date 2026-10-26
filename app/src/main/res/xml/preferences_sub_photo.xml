@@ -164,7 +164,7 @@
         android:summary="@string/preference_remove_device_exif_summary"
         android:entries="@array/preference_remove_device_exif_entries"
         android:entryValues="@array/preference_remove_device_exif_values"
-        android:defaultValue="preference_remove_device_exif_off"
+        android:defaultValue="preference_remove_device_exif_on"
         />
 
     <PreferenceCategory

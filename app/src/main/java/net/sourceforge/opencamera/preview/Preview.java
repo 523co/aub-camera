@@ -9,6 +9,7 @@ import net.sourceforge.opencamera.R;
 import net.sourceforge.opencamera.TakePhoto;
 import net.sourceforge.opencamera.ToastBoxer;
 import net.sourceforge.opencamera.aub.AubEffects;
+import net.sourceforge.opencamera.aub.BarcodeScanner;
 import net.sourceforge.opencamera.aub.CplFilter;
 import net.sourceforge.opencamera.cameracontroller.CameraController;
 import net.sourceforge.opencamera.cameracontroller.CameraController1;
@@ -164,6 +165,8 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
     private volatile boolean want_aub_glare_meter;
     private Bitmap aub_effect_bitmap; // only accessed on UI thread
     private float aub_glare_score = -1.0f; // only accessed on UI thread; < 0 if not available
+    private volatile boolean want_aub_barcode_scan; // Aub Camera: QR / barcode scan mode
+    private BarcodeScanner aub_barcode_scanner; // only accessed on the RefreshPreviewBitmapTask thread
 
     private boolean want_zebra_stripes; // whether to generate zebra stripes bitmap, requires want_preview_bitmap==true and use_preview_bitmap_small==true
     private int zebra_stripes_threshold; // pixels with max rgb value equal to or greater than this threshold are marked with zebra stripes
@@ -8640,7 +8643,14 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
     }
 
     public boolean wantsAubPreviewBitmap() {
-        return aub_live_params != null || want_aub_glare_meter;
+        return aub_live_params != null || want_aub_glare_meter || want_aub_barcode_scan;
+    }
+
+    /** Aub Camera: whether to look for QR codes and barcodes in the viewfinder. Results are passed to
+     *  ApplicationInterface.onBarcodeScanned(). Requires the preview bitmap to be enabled.
+     */
+    public void setAubBarcodeScan(boolean want_barcode_scan) {
+        this.want_aub_barcode_scan = want_barcode_scan;
     }
 
     /** The live look preview frame, rotated for display like the zebra stripes bitmap, or null. */
@@ -8751,6 +8761,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
         Bitmap new_aub_effect_bitmap;
         boolean aub_effect_attempted;
         float aub_glare_score = -1.0f;
+        com.google.zxing.Result aub_barcode;
     }
 
     // use static class, and WeakReferences, to avoid memory leaks: https://stackoverflow.com/questions/44309241/warning-this-asynctask-class-should-be-static-or-leaks-might-occur/46166223
@@ -8988,6 +8999,11 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
                         result.new_aub_effect_bitmap = null;
                     }
                 }
+                if( preview.want_aub_barcode_scan && !preview.isTakingPhoto() ) {
+                    if( preview.aub_barcode_scanner == null )
+                        preview.aub_barcode_scanner = new BarcodeScanner();
+                    result.aub_barcode = preview.aub_barcode_scanner.scan(textureView);
+                }
                 if( preview_bitmap != null && preview.want_aub_glare_meter ) {
                     int n = preview_bitmap.getWidth() * preview_bitmap.getHeight();
                     int [] pixels = new int[n];
@@ -9054,6 +9070,8 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
             }
             if( preview.want_aub_glare_meter )
                 preview.aub_glare_score = result.aub_glare_score;
+            if( preview.want_aub_barcode_scan && result.aub_barcode != null )
+                preview.applicationInterface.onBarcodeScanned(result.aub_barcode.getText(), result.aub_barcode.getBarcodeFormat().toString());
 
             if( preview.want_pre_shots && result.preview_bitmap_full_copy != null ) {
                 if( preview.isTakingPhoto() ) {

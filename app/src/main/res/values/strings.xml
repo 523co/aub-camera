@@ -804,6 +804,20 @@
     <string name="aub_cpl_meter_best">best</string>
     <string name="aub_cpl_meter_hint">Rotate filter slowly</string>
 
+    <!-- Aub Camera capture mode tabs, zoom chips and scan mode -->
+    <string name="aub_mode_night">Night</string>
+    <string name="aub_mode_photo">Photo</string>
+    <string name="aub_mode_video">Video</string>
+    <string name="aub_mode_scan">Scan</string>
+    <string name="aub_zoom_to">Zoom to %1$s×</string>
+    <string name="aub_scan_hint">Point at a QR code or barcode</string>
+    <string name="aub_scan_qr_code">QR code</string>
+    <string name="aub_scan_open">Open</string>
+    <string name="aub_scan_copy">Copy</string>
+    <string name="aub_scan_share">Share</string>
+    <string name="aub_scan_copied">Copied</string>
+    <string name="aub_scan_no_app">No app can open this</string>
+
     <!-- Aub Camera settings -->
     <string name="preference_screen_aub_modes">Aub Camera modes</string>
     <string name="preference_screen_aub_modes_summary">Portrait, CPL filter, PS2 style, 2000s digicam and disposable camera</string>

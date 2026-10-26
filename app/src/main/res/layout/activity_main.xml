@@ -11,12 +11,50 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         />
-    
+
+    <!-- Aub Camera: GrapheneOS Camera style controls, positioned in MainUI.layoutUI() -->
+    <View
+        android:id="@+id/aub_bottom_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@color/aub_bottom_scrim"
+        android:importantForAccessibility="no"
+        />
+
+    <LinearLayout
+        android:id="@+id/aub_zoom_chips"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone"
+        />
+
+    <HorizontalScrollView
+        android:id="@+id/aub_mode_tabs_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:scrollbars="none"
+        android:overScrollMode="never"
+        android:fadingEdgeLength="48dp"
+        android:requiresFadingEdge="horizontal"
+        >
+
+        <LinearLayout
+            android:id="@+id/aub_mode_tabs"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            />
+
+    </HorizontalScrollView>
+
     <ImageButton
         android:id="@+id/take_photo"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:padding="10dp"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:padding="0dp"
         android:scaleType="fitCenter"
         android:contentDescription="@string/take_photo"
         app:srcCompat="@drawable/take_photo_selector"
@@ -27,17 +65,15 @@
 
     <ImageButton
         android:id="@+id/switch_camera"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:padding="10dp"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:padding="13dp"
         android:scaleType="fitCenter"
         android:contentDescription="@string/switch_to_front_camera"
-        app:srcCompat="@drawable/switch_camera"
+        app:srcCompat="@drawable/ic_aub_flip_camera"
         android:stateListAnimator="@animator/button_animation"
         android:onClick="clickedSwitchCamera"
-        android:background="@drawable/circle_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@drawable/aub_round_button"
         />
 
     <ImageButton
@@ -99,6 +135,7 @@
         android:alpha="0.61"
         android:onClick="clickedSwitchVideo"
         android:background="@null"
+        android:visibility="gone"
         />
 
     <!-- need large padding than pause_video, to reflect that pause_video icon has padding built into the png image -->
@@ -167,15 +204,13 @@
         -->
     <ImageButton
         android:id="@+id/gallery"
-        android:layout_width="44dp"
-        android:layout_height="44dp"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
         android:padding="0dp"
-        android:scaleType="fitCenter"
+        android:scaleType="centerCrop"
         android:contentDescription="@string/gallery"
         app:srcCompat="@drawable/baseline_photo_library_white_48"
-        android:background="#00000000"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@drawable/aub_round_button"
         android:onClick="clickedGallery"
         />
 
@@ -187,9 +222,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/action_settings"
         app:srcCompat="@drawable/settings"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedSettings"
         />
 
@@ -200,10 +233,8 @@
         android:padding="10dp"
         android:scaleType="fitCenter"
         android:contentDescription="@string/action_popup"
-        app:srcCompat="@drawable/popup"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        app:srcCompat="@drawable/ic_aub_expand_more"
+        android:background="@null"
         android:onClick="clickedPopupSettings"
         />
     
@@ -215,9 +246,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/exposure"
         app:srcCompat="@drawable/ic_exposure_white_48dp"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedExposure"
         android:visibility="gone"
         />
@@ -230,9 +259,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/exposure_lock"
         app:srcCompat="@drawable/exposure_unlocked"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedExposureLock"
         android:visibility="gone"
         />
@@ -246,9 +273,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/white_balance_lock"
         app:srcCompat="@drawable/white_balance_unlocked"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedWhiteBalanceLock"
         android:visibility="gone"
         />
@@ -261,9 +286,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/cycle_raw"
         app:srcCompat="@drawable/raw_off_icon"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedCycleRaw"
         android:visibility="gone"
         />
@@ -276,9 +299,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/preference_location_enable"
         app:srcCompat="@drawable/ic_gps_fixed_white_48dp"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedStoreLocation"
         android:visibility="gone"
         />
@@ -291,9 +312,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/switch_to_video"
         android:src="@drawable/switch_video"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedSwitchVideo"
         />-->
 
@@ -305,9 +324,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/switch_to_front_camera"
         android:src="@drawable/baseline_switch_camera_white_48"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedSwitchCamera"
         />-->
 
@@ -319,9 +336,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/preference_textstamp_summary"
         app:srcCompat="@drawable/baseline_text_fields_white_48"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedTextStamp"
         android:visibility="gone"
         />
@@ -334,9 +349,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/stamp_enable"
         app:srcCompat="@drawable/ic_text_format_white_48dp"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedStamp"
         android:visibility="gone"
         />
@@ -349,9 +362,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/focus_peaking_enable"
         app:srcCompat="@drawable/key_visualizer"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedFocusPeaking"
         android:visibility="gone"
         />
@@ -364,9 +375,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/auto_level_enable"
         app:srcCompat="@drawable/auto_stabilise_icon"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedAutoLevel"
         android:visibility="gone"
         />
@@ -379,9 +388,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/cycle_flash"
         app:srcCompat="@drawable/flash_off"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedCycleFlash"
         android:visibility="gone"
         />
@@ -394,9 +401,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/face_detection_enable"
         app:srcCompat="@drawable/ic_face_white_48dp"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedFaceDetection"
         android:visibility="gone"
         />
@@ -409,9 +414,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/audio_control_start"
         app:srcCompat="@drawable/ic_mic_white_48dp"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedAudioControl"
         android:visibility="gone"
         />
@@ -424,9 +427,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/remote_connected"
         app:srcCompat="@drawable/baseline_bluetooth_white_48"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:visibility="gone"
         />
 
@@ -439,9 +440,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/trash"
         app:srcCompat="@drawable/baseline_delete_white_48"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedTrash"
         android:visibility="gone"
         />
@@ -454,9 +453,7 @@
         android:scaleType="fitCenter"
         android:contentDescription="@string/share"
         app:srcCompat="@drawable/share"
-        android:background="@color/icons_background"
-        android:backgroundTint="@color/icons_background_tint"
-        android:backgroundTintMode="src_in"
+        android:background="@null"
         android:onClick="clickedShare"
         android:visibility="gone"
         />

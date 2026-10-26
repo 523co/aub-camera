@@ -7,6 +7,7 @@ import net.sourceforge.opencamera.cameracontroller.CameraControllerManager2;
 import net.sourceforge.opencamera.preview.Preview;
 import net.sourceforge.opencamera.preview.VideoProfile;
 import net.sourceforge.opencamera.remotecontrol.BluetoothRemoteControl;
+import net.sourceforge.opencamera.ui.AubControls;
 import net.sourceforge.opencamera.ui.DrawPreview;
 import net.sourceforge.opencamera.ui.FolderChooserDialog;
 import net.sourceforge.opencamera.ui.MainUI;
@@ -129,6 +130,7 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
     private PermissionHandler permissionHandler;
     private SettingsManager settingsManager;
     private MainUI mainUI;
+    private AubControls aubControls;
     private ManualSeekbars manualSeekbars;
     private MyApplicationInterface applicationInterface;
     private TextFormatter textFormatter;
@@ -326,6 +328,8 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
         permissionHandler = new PermissionHandler(this);
         settingsManager = new SettingsManager(this);
         mainUI = new MainUI(this);
+        aubControls = new AubControls(this);
+        aubControls.init();
         manualSeekbars = new ManualSeekbars();
         applicationInterface = new MyApplicationInterface(this, savedInstanceState);
         if( MyDebug.LOG )
@@ -505,13 +509,14 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
         // initialise state of on-screen icons
         mainUI.updateOnScreenIcons();
 
-        if( MainActivity.lock_to_landscape ) {
-            // listen for orientation event change (only required if lock_to_landscape==true
-            // (MainUI.onOrientationChanged() does nothing if lock_to_landscape==false)
+        {
+            // listen for orientation event change (MainUI.onOrientationChanged() does nothing if lock_to_landscape==false,
+            // but Aub Camera keeps the screen in portrait and rotates the icons instead)
             orientationEventListener = new OrientationEventListener(this) {
                 @Override
                 public void onOrientationChanged(int orientation) {
                     MainActivity.this.mainUI.onOrientationChanged(orientation);
+                    MainActivity.this.aubControls.onOrientationChanged(orientation);
                 }
             };
             if( MyDebug.LOG )
@@ -2760,6 +2765,16 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
     public void clickedSwitchVideo(View view) {
         if( MyDebug.LOG )
             Log.d(TAG, "clickedSwitchVideo");
+        switchVideoMode(true);
+    }
+
+    /**
+     * Toggles Photo/Video mode
+     * @param show_toast Whether to show the usual toast for the new mode.
+     */
+    public void switchVideoMode(boolean show_toast) {
+        if( MyDebug.LOG )
+            Log.d(TAG, "switchVideoMode");
         this.closePopup();
         mainUI.destroyPopup(); // important as we don't want to use a cached popup, as we can show different options depending on whether we're in photo or video mode
 
@@ -2782,8 +2797,9 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
         // ensure icons invisible if they're affected by being in video mode or not (e.g., on-screen RAW icon)
         // (if enabling them, we'll make the icon visible later on)
         checkDisableGUIIcons();
+        aubControls.updateModeTabs();
 
-        if( !block_startup_toast ) {
+        if( show_toast && !block_startup_toast ) {
             this.showPhotoVideoToast(true);
         }
     }
@@ -4326,8 +4342,9 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
             //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE); // testing for devices with unusual sensor orientation (e.g., Nexus 5X)
         }
         else {
-            // allow orientation to change for camera, even if user has locked orientation
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+            // Aub Camera: as in GrapheneOS Camera, the camera screen stays in portrait, and the icons
+            // rotate to match the device instead (see AubControls.onOrientationChanged())
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         }
         if( preview != null ) {
             // also need to call preview.setCameraDisplayOrientation, as this handles if the user switched from portrait to reverse landscape whilst in settings/etc
@@ -5618,6 +5635,12 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
         if( MyDebug.LOG )
             Log.d(TAG, "takePicture");
 
+        if( aubControls.isScanMode() ) {
+            if( MyDebug.LOG )
+                Log.d(TAG, "no photos in scan mode");
+            return;
+        }
+
         if( applicationInterface.getPhotoMode() == MyApplicationInterface.PhotoMode.Panorama ) {
             if( preview.isTakingPhoto() ) {
                 if( MyDebug.LOG )
@@ -5901,7 +5924,7 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
                     }
                 });
 
-                if( sharedPreferences.getBoolean(PreferenceKeys.ShowZoomSliderControlsPreferenceKey, true) ) {
+                if( sharedPreferences.getBoolean(PreferenceKeys.ShowZoomSliderControlsPreferenceKey, false) ) {
                     if( !mainUI.inImmersiveMode() ) {
                         zoomSeekBar.setVisibility(View.VISIBLE);
                     }
@@ -5925,6 +5948,8 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
             else {
                 takePhotoButton.setVisibility(View.INVISIBLE);
             }
+            aubControls.updateModeTabs();
+            aubControls.updateZoomChips();
         }
         {
             if( MyDebug.LOG )
@@ -6434,6 +6459,10 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
 
     public MainUI getMainUI() {
         return this.mainUI;
+    }
+
+    public AubControls getAubControls() {
+        return this.aubControls;
     }
 
     public ManualSeekbars getManualSeekbars() {

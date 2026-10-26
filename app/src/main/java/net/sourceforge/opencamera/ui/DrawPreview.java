@@ -22,6 +22,7 @@ import net.sourceforge.opencamera.PreferenceKeys;
 import net.sourceforge.opencamera.preview.ApplicationInterface;
 import net.sourceforge.opencamera.R;
 import net.sourceforge.opencamera.aub.AubEffects;
+import net.sourceforge.opencamera.aub.BarcodeScanner;
 import net.sourceforge.opencamera.cameracontroller.CameraController;
 import net.sourceforge.opencamera.preview.Preview;
 
@@ -669,7 +670,7 @@ public class DrawPreview {
         if( MyDebug.LOG )
             Log.d(TAG, "photoMode: " + photoMode);
 
-        show_time_pref = sharedPreferences.getBoolean(PreferenceKeys.ShowTimePreferenceKey, true);
+        show_time_pref = sharedPreferences.getBoolean(PreferenceKeys.ShowTimePreferenceKey, false);
         // reset in case user changes the preference:
         dateFormatTimeInstance = DateFormat.getTimeInstance();
         current_time_string = null;
@@ -678,11 +679,11 @@ public class DrawPreview {
 
         show_camera_id_pref = main_activity.isMultiCam() && sharedPreferences.getBoolean(PreferenceKeys.ShowCameraIDPreferenceKey, true);
         //show_camera_id_pref = true; // test
-        show_free_memory_pref = sharedPreferences.getBoolean(PreferenceKeys.ShowFreeMemoryPreferenceKey, true);
+        show_free_memory_pref = sharedPreferences.getBoolean(PreferenceKeys.ShowFreeMemoryPreferenceKey, false);
         show_iso_pref = sharedPreferences.getBoolean(PreferenceKeys.ShowISOPreferenceKey, true);
         show_video_max_amp_pref = sharedPreferences.getBoolean(PreferenceKeys.ShowVideoMaxAmpPreferenceKey, false);
-        show_zoom_pref = sharedPreferences.getBoolean(PreferenceKeys.ShowZoomPreferenceKey, true);
-        show_battery_pref = sharedPreferences.getBoolean(PreferenceKeys.ShowBatteryPreferenceKey, true);
+        show_zoom_pref = sharedPreferences.getBoolean(PreferenceKeys.ShowZoomPreferenceKey, false);
+        show_battery_pref = sharedPreferences.getBoolean(PreferenceKeys.ShowBatteryPreferenceKey, false);
 
         show_angle_pref = sharedPreferences.getBoolean(PreferenceKeys.ShowAnglePreferenceKey, false);
         String angle_highlight_color = sharedPreferences.getString(PreferenceKeys.ShowAngleHighlightColorPreferenceKey, "#14e715");
@@ -2684,8 +2685,10 @@ public class DrawPreview {
 
                 int st_x = canvas.getWidth()/2;
                 int st_y = canvas.getHeight()/2;
-                int nd_x = galleryButton.getLeft() + galleryButton.getWidth()/2;
-                int nd_y = galleryButton.getTop() + galleryButton.getHeight()/2;
+                // the canvas is the viewfinder, which isn't necessarily centred on screen
+                View previewFrame = main_activity.findViewById(R.id.preview);
+                int nd_x = galleryButton.getLeft() + galleryButton.getWidth()/2 - previewFrame.getLeft();
+                int nd_y = galleryButton.getTop() + galleryButton.getHeight()/2 - previewFrame.getTop();
                 int thumbnail_x = (int)( (1.0f-alpha)*st_x + alpha*nd_x );
                 int thumbnail_y = (int)( (1.0f-alpha)*st_y + alpha*nd_y );
 
@@ -2850,8 +2853,9 @@ public class DrawPreview {
         int ui_rotation = preview.getUIRotation();
 
         // set up preview bitmaps (histogram etc)
-        boolean want_preview_bitmap = want_histogram || want_zebra_stripes || want_focus_peaking || want_pre_shots || want_aub_live || want_aub_glare_meter;
-        boolean use_preview_bitmap_small = want_histogram || want_zebra_stripes || want_focus_peaking || want_aub_live || want_aub_glare_meter;
+        boolean want_aub_barcode_scan = main_activity.getAubControls().wantsBarcodeScan() && !preview.isVideo() && main_activity.supportsPreviewBitmaps();
+        boolean want_preview_bitmap = want_histogram || want_zebra_stripes || want_focus_peaking || want_pre_shots || want_aub_live || want_aub_glare_meter || want_aub_barcode_scan;
+        boolean use_preview_bitmap_small = want_histogram || want_zebra_stripes || want_focus_peaking || want_aub_live || want_aub_glare_meter || want_aub_barcode_scan;
         boolean use_preview_bitmap_full = want_pre_shots;
         if( want_preview_bitmap != preview.isPreviewBitmapEnabled() || use_preview_bitmap_small != preview.usePreviewBitmapSmall() || use_preview_bitmap_full != preview.usePreviewBitmapFull() ) {
             if( want_preview_bitmap ) {
@@ -2882,9 +2886,11 @@ public class DrawPreview {
                 preview.disablePreShots();
 
             preview.setAubLiveEffect(want_aub_live ? aub_params : null, want_aub_glare_meter);
+            preview.setAubBarcodeScan(want_aub_barcode_scan);
         }
         else if( preview.wantsAubPreviewBitmap() ) {
             preview.setAubLiveEffect(null, false);
+            preview.setAubBarcodeScan(false);
         }
 
         // See documentation for CameraController.shouldCoverPreview().
@@ -3053,6 +3059,9 @@ public class DrawPreview {
 
         if( want_aub_glare_meter && camera_controller != null && !preview.isPreviewPaused() && !show_last_image ) {
             drawAubGlareMeter(canvas, ui_rotation, time_ms);
+        }
+        if( main_activity.getAubControls().isScanMode() && camera_controller != null && !preview.isVideo() ) {
+            drawAubScanFrame(canvas);
         }
 
         drawAngleLines(canvas, device_ui_rotation, time_ms);
@@ -3270,6 +3279,51 @@ public class DrawPreview {
         p.setAlpha(255);
         p.setTextAlign(Paint.Align.LEFT);
         canvas.restore();
+    }
+
+    /** Aub Camera: shows where codes are looked for in scan mode (see BarcodeScanner).
+     */
+    private void drawAubScanFrame(Canvas canvas) {
+        final float w = canvas.getWidth();
+        final float h = canvas.getHeight();
+        final float size = Math.min(w, h) * BarcodeScanner.scan_area_fraction;
+        final float left = (w - size)/2.0f;
+        final float top = (h - size)/2.0f;
+        final float right = left + size;
+        final float bottom = top + size;
+
+        // dim outside the frame
+        p.setStyle(Paint.Style.FILL);
+        p.setColor(Color.BLACK);
+        p.setAlpha(100);
+        canvas.drawRect(0.0f, 0.0f, w, top, p);
+        canvas.drawRect(0.0f, bottom, w, h, p);
+        canvas.drawRect(0.0f, top, left, bottom, p);
+        canvas.drawRect(right, top, w, bottom, p);
+
+        // corners
+        final float corner = 28 * scale_dp;
+        p.setColor(Color.WHITE);
+        p.setAlpha(255);
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(4 * scale_dp);
+        p.setStrokeCap(Paint.Cap.ROUND);
+        canvas.drawLine(left, top, left + corner, top, p);
+        canvas.drawLine(left, top, left, top + corner, p);
+        canvas.drawLine(right, top, right - corner, top, p);
+        canvas.drawLine(right, top, right, top + corner, p);
+        canvas.drawLine(left, bottom, left + corner, bottom, p);
+        canvas.drawLine(left, bottom, left, bottom - corner, p);
+        canvas.drawLine(right, bottom, right - corner, bottom, p);
+        canvas.drawLine(right, bottom, right, bottom - corner, p);
+        p.setStrokeCap(Paint.Cap.BUTT);
+        p.setStrokeWidth(stroke_width);
+        p.setStyle(Paint.Style.FILL);
+
+        p.setTextSize(14 * scale_font + 0.5f);
+        p.setTextAlign(Paint.Align.CENTER);
+        applicationInterface.drawTextWithBackground(canvas, p, getContext().getResources().getString(R.string.aub_scan_hint), Color.WHITE, Color.BLACK, (int)(w/2.0f), (int)(bottom + 16 * scale_dp), MyApplicationInterface.Alignment.ALIGNMENT_TOP);
+        p.setTextAlign(Paint.Align.LEFT);
     }
 
     private void drawGyroSpot(Canvas canvas, float distance_x, float distance_y, float dir_x, float dir_y, int radius_dp, boolean outline) {

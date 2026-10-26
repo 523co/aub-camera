@@ -419,6 +419,13 @@ public class MainUI {
 
         if( !popup_container_only )
         {
+            // Aub Camera: start from clean layout params, as the portrait layout (see layoutAubPortrait())
+            // uses different rules to the ones below
+            for(View this_view : getAubLayoutViews()) {
+                RelativeLayout.LayoutParams old_params = (RelativeLayout.LayoutParams)this_view.getLayoutParams();
+                this_view.setLayoutParams(new RelativeLayout.LayoutParams(old_params.width, old_params.height));
+            }
+
             // reset:
             top_icon = null;
 
@@ -735,6 +742,13 @@ public class MainUI {
             view.setLayoutParams(layoutParams);
 
             setFocusSeekbarsRotation();
+
+            if( system_orientation_portrait ) {
+                layoutAubPortrait(navigation_gap);
+            }
+            else {
+                layoutAubLandscape();
+            }
         }
 
         if( !popup_container_only )
@@ -864,7 +878,13 @@ public class MainUI {
         {
             final View view = main_activity.findViewById(R.id.popup_container);
             RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
-            if( ui_placement == UIPlacement.UIPLACEMENT_TOP ) {
+            if( system_orientation_portrait ) {
+                // Aub Camera: drops down from the button at the top middle
+                layoutParams = new RelativeLayout.LayoutParams(layoutParams.width, layoutParams.height);
+                layoutParams.addRule(RelativeLayout.BELOW, R.id.popup);
+                layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+            }
+            else if( ui_placement == UIPlacement.UIPLACEMENT_TOP ) {
                 layoutParams.addRule(align_right, 0);
                 layoutParams.addRule(align_bottom, 0);
                 layoutParams.addRule(align_left, 0);
@@ -923,11 +943,265 @@ public class MainUI {
         if( !popup_container_only ) {
             setTakePhotoIcon();
             // no need to call setSwitchCameraContentDescription()
+            main_activity.getAubControls().updateModeTabs();
         }
 
         if( MyDebug.LOG ) {
             Log.d(TAG, "layoutUI: total time: " + (System.currentTimeMillis() - debug_time));
         }
+    }
+
+    /** Aub Camera: the views positioned by layoutAubPortrait() and layoutAubLandscape().
+     */
+    private List<View> getAubLayoutViews() {
+        List<View> views = new ArrayList<>();
+        int [] ids = new int[] {
+                R.id.aub_bottom_scrim,
+                R.id.aub_zoom_chips,
+                R.id.aub_mode_tabs_scroll,
+                R.id.gui_anchor,
+                R.id.take_photo,
+                R.id.gallery,
+                R.id.switch_camera,
+                R.id.switch_multi_camera,
+                R.id.pause_video,
+                R.id.cancel_panorama,
+                R.id.switch_video,
+                R.id.take_photo_when_video_recording,
+                R.id.cycle_flash,
+                R.id.popup,
+                R.id.settings
+        };
+        for(int id : ids) {
+            views.add(main_activity.findViewById(id));
+        }
+        views.addAll(getAubTopBarChain());
+        return views;
+    }
+
+    /** Aub Camera: the optional icons along the top, which are placed to the left of the settings icon.
+     */
+    private List<View> getAubTopBarChain() {
+        List<View> views = new ArrayList<>();
+        int [] ids = new int[] {
+                R.id.exposure,
+                R.id.exposure_lock,
+                R.id.white_balance_lock,
+                R.id.cycle_raw,
+                R.id.store_location,
+                R.id.text_stamp,
+                R.id.stamp,
+                R.id.focus_peaking,
+                R.id.auto_level,
+                R.id.face_detection,
+                R.id.audio_control,
+                R.id.kraken_icon,
+                R.id.trash,
+                R.id.share
+        };
+        for(int id : ids) {
+            views.add(main_activity.findViewById(id));
+        }
+        return views;
+    }
+
+    /** Aub Camera: lays out the GrapheneOS Camera style UI when the screen is in portrait (which it
+     *  normally always is): a row of icons along the top, the viewfinder below them, and at the
+     *  bottom the zoom chips, the capture mode tabs, and the gallery thumbnail, shutter and switch
+     *  camera button.
+     *  Replaces the layout rules set by the rest of layoutUI() for these views.
+     */
+    private void layoutAubPortrait(int navigation_gap) {
+        if( MyDebug.LOG )
+            Log.d(TAG, "layoutAubPortrait");
+        final float scale = main_activity.getResources().getDisplayMetrics().density;
+        final int top_bar_height = (int) (56 * scale + 0.5f); // convert dps to pixels
+        final int top_icon_size = (int) (48 * scale + 0.5f); // convert dps to pixels
+        final int top_icon_margin = (int) (4 * scale + 0.5f); // convert dps to pixels
+        final int edge_margin = (int) (8 * scale + 0.5f); // convert dps to pixels
+        final int shutter_size = (int) (80 * scale + 0.5f); // convert dps to pixels
+        final int side_button_size = (int) (52 * scale + 0.5f); // convert dps to pixels
+        final int tabs_height = (int) (36 * scale + 0.5f); // convert dps to pixels
+        final int zoom_chips_height = (int) (38 * scale + 0.5f); // convert dps to pixels
+        final int gap = (int) (12 * scale + 0.5f); // convert dps to pixels
+        final int shutter_bottom = navigation_gap + (int) (28 * scale + 0.5f); // convert dps to pixels
+        final int tabs_bottom = shutter_bottom + shutter_size + gap;
+        final int zoom_chips_bottom = tabs_bottom + tabs_height + gap;
+        final int scrim_height = zoom_chips_bottom + zoom_chips_height + gap;
+        // centre the gallery and switch camera buttons in the space either side of the shutter
+        final int display_width = Math.min(layoutUI_display_w, layoutUI_display_h);
+        final int side_button_margin = Math.max(edge_margin, (display_width/2 - shutter_size/2)/2 - side_button_size/2);
+        final int side_button_bottom = shutter_bottom + (shutter_size - side_button_size)/2;
+        final int icon_rotation = main_activity.getAubControls().getIconRotation();
+
+        // viewfinder: below the top icons, rather than centred
+        setPreviewPosition(true, top_bar_height);
+
+        // top icons
+        View view = main_activity.findViewById(R.id.cycle_flash);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(top_icon_size, top_icon_size);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
+        layoutParams.setMargins(edge_margin, top_icon_margin, 0, 0);
+        view.setLayoutParams(layoutParams);
+
+        view = main_activity.findViewById(R.id.popup);
+        layoutParams = new RelativeLayout.LayoutParams(top_icon_size, top_icon_size);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+        layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+        layoutParams.setMargins(0, top_icon_margin, 0, 0);
+        view.setLayoutParams(layoutParams);
+
+        // dummy view, so the icons keep their positions even if the settings icon is hidden
+        view = main_activity.findViewById(R.id.gui_anchor);
+        layoutParams = new RelativeLayout.LayoutParams(0, top_icon_size);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+        layoutParams.setMargins(0, top_icon_margin, edge_margin, 0);
+        view.setLayoutParams(layoutParams);
+
+        View previous_view = main_activity.findViewById(R.id.settings);
+        layoutParams = new RelativeLayout.LayoutParams(top_icon_size, top_icon_size);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+        layoutParams.addRule(RelativeLayout.LEFT_OF, R.id.gui_anchor);
+        layoutParams.setMargins(0, top_icon_margin, 0, 0);
+        previous_view.setLayoutParams(layoutParams);
+
+        for(View this_view : getAubTopBarChain()) {
+            layoutParams = new RelativeLayout.LayoutParams(top_icon_size, top_icon_size);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+            layoutParams.addRule(RelativeLayout.LEFT_OF, previous_view.getId());
+            layoutParams.setMargins(0, top_icon_margin, 0, 0);
+            this_view.setLayoutParams(layoutParams);
+            previous_view = this_view;
+        }
+
+        // bottom controls
+        view = main_activity.findViewById(R.id.aub_bottom_scrim);
+        layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, scrim_height);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+        view.setLayoutParams(layoutParams);
+        view.setVisibility(View.VISIBLE);
+
+        view = main_activity.findViewById(R.id.aub_zoom_chips);
+        layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, zoom_chips_height);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+        layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+        layoutParams.bottomMargin = zoom_chips_bottom;
+        view.setLayoutParams(layoutParams);
+
+        view = main_activity.findViewById(R.id.aub_mode_tabs_scroll);
+        layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, tabs_height);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+        layoutParams.bottomMargin = tabs_bottom;
+        view.setLayoutParams(layoutParams);
+
+        view = main_activity.findViewById(R.id.take_photo);
+        layoutParams = new RelativeLayout.LayoutParams(shutter_size, shutter_size);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+        layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+        layoutParams.bottomMargin = shutter_bottom;
+        view.setLayoutParams(layoutParams);
+        view.setRotation(0.0f);
+
+        // the gallery thumbnail on the left, and switch camera button on the right; while recording video, they're
+        // replaced by the take photo snapshot and pause buttons
+        int [] left_ids = new int[]{R.id.gallery, R.id.take_photo_when_video_recording};
+        int [] right_ids = new int[]{R.id.switch_camera, R.id.pause_video, R.id.cancel_panorama};
+        for(int id : left_ids) {
+            view = main_activity.findViewById(id);
+            layoutParams = new RelativeLayout.LayoutParams(side_button_size, side_button_size);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
+            layoutParams.setMargins(side_button_margin, 0, 0, side_button_bottom);
+            view.setLayoutParams(layoutParams);
+        }
+        for(int id : right_ids) {
+            view = main_activity.findViewById(id);
+            layoutParams = new RelativeLayout.LayoutParams(side_button_size, side_button_size);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+            layoutParams.setMargins(0, 0, side_button_margin, side_button_bottom);
+            view.setLayoutParams(layoutParams);
+        }
+
+        // choosing between multiple cameras facing the same way: above the switch camera button
+        view = main_activity.findViewById(R.id.switch_multi_camera);
+        layoutParams = new RelativeLayout.LayoutParams(side_button_size, side_button_size);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+        layoutParams.setMargins(0, 0, side_button_margin, tabs_bottom + tabs_height + gap);
+        view.setLayoutParams(layoutParams);
+
+        // video is one of the mode tabs
+        main_activity.findViewById(R.id.switch_video).setVisibility(View.GONE);
+
+        // keep the icons upright for how the device is held (cancelling the rotation animations started
+        // by the rest of layoutUI())
+        AubControls aubControls = main_activity.getAubControls();
+        for(View this_view : getAubLayoutViews()) {
+            int id = this_view.getId();
+            if( id == R.id.take_photo || id == R.id.aub_bottom_scrim || id == R.id.aub_zoom_chips || id == R.id.aub_mode_tabs_scroll ) {
+                this_view.animate().cancel();
+                this_view.setRotation(0.0f);
+            }
+            else {
+                aubControls.rotateView(this_view, false);
+            }
+        }
+    }
+
+    /** Aub Camera: positions the viewfinder either centred, or at the top (below the top icons).
+     *  Only changes the layout params if needed, to avoid relayouts.
+     */
+    private void setPreviewPosition(boolean align_top, int top_margin) {
+        View view = main_activity.findViewById(R.id.preview);
+        RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams)view.getLayoutParams();
+        boolean is_align_top = layoutParams.getRule(RelativeLayout.ALIGN_PARENT_TOP) != 0;
+        if( is_align_top == align_top && layoutParams.topMargin == (align_top ? top_margin : 0) ) {
+            return;
+        }
+        layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        if( align_top ) {
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+            layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+            layoutParams.topMargin = top_margin;
+        }
+        else {
+            layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
+        }
+        view.setLayoutParams(layoutParams);
+    }
+
+    /** Aub Camera: places the views added for the GrapheneOS Camera style UI, for when the screen is
+     *  in landscape (e.g. split screen); the rest of layoutUI() places the standard Open Camera views.
+     */
+    private void layoutAubLandscape() {
+        if( MyDebug.LOG )
+            Log.d(TAG, "layoutAubLandscape");
+        final float scale = main_activity.getResources().getDisplayMetrics().density;
+        final int margin = (int) (8 * scale + 0.5f); // convert dps to pixels
+        final int tabs_height = (int) (36 * scale + 0.5f); // convert dps to pixels
+
+        setPreviewPosition(false, 0);
+
+        main_activity.findViewById(R.id.aub_bottom_scrim).setVisibility(View.GONE);
+
+        View view = main_activity.findViewById(R.id.aub_mode_tabs_scroll);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(layoutUI_display_w/2, tabs_height);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+        layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+        layoutParams.bottomMargin = margin + main_activity.getNavigationGapLandscape();
+        view.setLayoutParams(layoutParams);
+
+        view = main_activity.findViewById(R.id.aub_zoom_chips);
+        layoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        layoutParams.addRule(RelativeLayout.ABOVE, R.id.aub_mode_tabs_scroll);
+        layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
+        layoutParams.bottomMargin = margin;
+        view.setLayoutParams(layoutParams);
+
+        main_activity.findViewById(R.id.switch_video).setVisibility(View.GONE);
     }
 
     /** Wrapper for layoutParams.setMargins, but where the margins are supplied for landscape orientation,
@@ -1234,7 +1508,7 @@ public class MainUI {
             return false;
         }
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(main_activity);
-        return sharedPreferences.getBoolean(PreferenceKeys.ShowExposureLockPreferenceKey, true);
+        return sharedPreferences.getBoolean(PreferenceKeys.ShowExposureLockPreferenceKey, false);
     }
 
     public boolean showWhiteBalanceLockIcon() {
@@ -1292,7 +1566,7 @@ public class MainUI {
         if( main_activity.getPreview().isVideo() )
             return false; // no point showing flash icon in video mode, as we only allow flash auto and flash torch, and we don't support torch on the on-screen cycle flash icon
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(main_activity);
-        return sharedPreferences.getBoolean(PreferenceKeys.ShowCycleFlashPreferenceKey, false);
+        return sharedPreferences.getBoolean(PreferenceKeys.ShowCycleFlashPreferenceKey, true);
     }
 
     public boolean showFaceDetectionIcon() {
@@ -1344,7 +1618,10 @@ public class MainUI {
                     switchCameraButton.setVisibility(visibility);
                 if( main_activity.showSwitchMultiCamIcon() )
                     switchMultiCameraButton.setVisibility(visibility);
-                switchVideoButton.setVisibility(visibility);
+                switchVideoButton.setVisibility(View.GONE); // Aub Camera: video is one of the mode tabs
+                main_activity.findViewById(R.id.aub_mode_tabs_scroll).setVisibility(visibility);
+                main_activity.findViewById(R.id.aub_bottom_scrim).setVisibility(visibility);
+                main_activity.getAubControls().setControlsHidden(immersive_mode);
                 if( main_activity.supportsExposureButton() )
                     exposureButton.setVisibility(visibility);
                 if( showExposureLockIcon() )
@@ -1375,7 +1652,7 @@ public class MainUI {
                 if( MyDebug.LOG ) {
                     Log.d(TAG, "has_zoom: " + main_activity.getPreview().supportsZoom());
                 }
-                if( main_activity.getPreview().supportsZoom() && sharedPreferences.getBoolean(PreferenceKeys.ShowZoomSliderControlsPreferenceKey, true) ) {
+                if( main_activity.getPreview().supportsZoom() && sharedPreferences.getBoolean(PreferenceKeys.ShowZoomSliderControlsPreferenceKey, false) ) {
                     zoomSeekBar.setVisibility(visibility);
                 }
                 if( main_activity.showManualFocusSeekbar(false) )
@@ -1464,7 +1741,11 @@ public class MainUI {
                     switchCameraButton.setVisibility(visibility);
                 if( main_activity.showSwitchMultiCamIcon() )
                     switchMultiCameraButton.setVisibility(visibility);
-                switchVideoButton.setVisibility(visibility);
+                switchVideoButton.setVisibility(View.GONE); // Aub Camera: video is one of the mode tabs
+                // Aub Camera: while recording video, the gallery thumbnail makes way for the take photo snapshot button, and the
+                // mode can't be changed
+                main_activity.findViewById(R.id.gallery).setVisibility(show_gui_video && !is_panorama_recording ? View.VISIBLE : View.GONE);
+                main_activity.findViewById(R.id.aub_mode_tabs_scroll).setVisibility(show_gui_video && !is_panorama_recording ? View.VISIBLE : View.INVISIBLE);
                 if( main_activity.supportsExposureButton() )
                     exposureButton.setVisibility(visibility_video); // still allow exposure when recording video
                 if( showExposureLockIcon() )
@@ -2369,31 +2650,9 @@ public class MainUI {
     public void setPopupIcon() {
         if( MyDebug.LOG )
             Log.d(TAG, "setPopupIcon");
+        // Aub Camera: the flash has its own icon, so the popup icon is always the same
         ImageButton popup = main_activity.findViewById(R.id.popup);
-        String flash_value = main_activity.getPreview().getCurrentFlashValue();
-        if( MyDebug.LOG )
-            Log.d(TAG, "flash_value: " + flash_value);
-        if( main_activity.getMainUI().showCycleFlashIcon() ) {
-            popup.setImageResource(R.drawable.popup);
-        }
-        else if( flash_value != null && flash_value.equals("flash_off") ) {
-            popup.setImageResource(R.drawable.popup_flash_off);
-        }
-        else if( flash_value != null && ( flash_value.equals("flash_torch") || flash_value.equals("flash_frontscreen_torch") ) ) {
-            popup.setImageResource(R.drawable.popup_flash_torch);
-        }
-        else if( flash_value != null && ( flash_value.equals("flash_auto") || flash_value.equals("flash_frontscreen_auto") ) ) {
-            popup.setImageResource(R.drawable.popup_flash_auto);
-        }
-        else if( flash_value != null && ( flash_value.equals("flash_on") || flash_value.equals("flash_frontscreen_on") ) ) {
-            popup.setImageResource(R.drawable.popup_flash_on);
-        }
-        else if( flash_value != null && flash_value.equals("flash_red_eye") ) {
-            popup.setImageResource(R.drawable.popup_flash_red_eye);
-        }
-        else {
-            popup.setImageResource(R.drawable.popup);
-        }
+        popup.setImageResource(R.drawable.ic_aub_expand_more);
     }
 
     public void closePopup() {

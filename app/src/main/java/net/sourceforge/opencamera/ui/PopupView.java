@@ -1167,66 +1167,7 @@ public class PopupView extends LinearLayout {
             }
             final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(main_activity);
             SharedPreferences.Editor editor = sharedPreferences.edit();
-            switch (new_photo_mode) {
-                case Standard:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_std");
-                    break;
-                case DRO:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_dro");
-                    break;
-                case HDR:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_hdr");
-                    break;
-                case ExpoBracketing:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_expo_bracketing");
-                    break;
-                case FocusBracketing:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_focus_bracketing");
-                    break;
-                case FastBurst:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_fast_burst");
-                    break;
-                case NoiseReduction:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_noise_reduction");
-                    break;
-                case Panorama:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_panorama");
-                    break;
-                case X_Auto:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_x_auto");
-                    break;
-                case X_HDR:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_x_hdr");
-                    break;
-                case X_Night:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_x_night");
-                    break;
-                case X_Bokeh:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_x_bokeh");
-                    break;
-                case X_Beauty:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_x_beauty");
-                    break;
-                case Portrait:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_aub_portrait");
-                    break;
-                case CPL:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_aub_cpl");
-                    break;
-                case PS2:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_aub_ps2");
-                    break;
-                case Digicam:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_aub_digicam");
-                    break;
-                case Disposable:
-                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_aub_disposable");
-                    break;
-                default:
-                    if (MyDebug.LOG)
-                        Log.e(TAG, "unknown new_photo_mode: " + new_photo_mode);
-                    break;
-            }
+            editor.putString(PreferenceKeys.PhotoModePreferenceKey, MyApplicationInterface.getPhotoModePreferenceValue(new_photo_mode));
             editor.apply();
 
             boolean done_dialog = false;

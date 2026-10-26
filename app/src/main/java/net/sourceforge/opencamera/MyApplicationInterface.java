@@ -109,6 +109,48 @@ public class MyApplicationInterface extends BasicApplicationInterface {
         }
     }
 
+    /** Returns the value stored in PreferenceKeys.PhotoModePreferenceKey for the photo mode. */
+    public static String getPhotoModePreferenceValue(PhotoMode photo_mode) {
+        switch( photo_mode ) {
+            case DRO:
+                return "preference_photo_mode_dro";
+            case HDR:
+                return "preference_photo_mode_hdr";
+            case ExpoBracketing:
+                return "preference_photo_mode_expo_bracketing";
+            case FocusBracketing:
+                return "preference_photo_mode_focus_bracketing";
+            case FastBurst:
+                return "preference_photo_mode_fast_burst";
+            case NoiseReduction:
+                return "preference_photo_mode_noise_reduction";
+            case Panorama:
+                return "preference_photo_mode_panorama";
+            case Portrait:
+                return "preference_photo_mode_aub_portrait";
+            case CPL:
+                return "preference_photo_mode_aub_cpl";
+            case PS2:
+                return "preference_photo_mode_aub_ps2";
+            case Digicam:
+                return "preference_photo_mode_aub_digicam";
+            case Disposable:
+                return "preference_photo_mode_aub_disposable";
+            case X_Auto:
+                return "preference_photo_mode_x_auto";
+            case X_HDR:
+                return "preference_photo_mode_x_hdr";
+            case X_Night:
+                return "preference_photo_mode_x_night";
+            case X_Bokeh:
+                return "preference_photo_mode_x_bokeh";
+            case X_Beauty:
+                return "preference_photo_mode_x_beauty";
+            default:
+                return "preference_photo_mode_std";
+        }
+    }
+
     /** Whether the photo mode is one of the Aub Camera modes. */
     public static boolean isAubPhotoMode(PhotoMode photo_mode) {
         return getAubEffect(photo_mode) != AubEffects.Effect.NONE;
@@ -1254,7 +1296,8 @@ public class MyApplicationInterface extends BasicApplicationInterface {
     }
 
     private ImageSaver.Request.RemoveDeviceExif getRemoveDeviceExifPref() {
-        switch( sharedPreferences.getString(PreferenceKeys.RemoveDeviceExifPreferenceKey, "preference_remove_device_exif_off") ) {
+        // Aub Camera: device metadata is removed by default, as in GrapheneOS Camera
+        switch( sharedPreferences.getString(PreferenceKeys.RemoveDeviceExifPreferenceKey, "preference_remove_device_exif_on") ) {
             case "preference_remove_device_exif_on":
                 return ImageSaver.Request.RemoveDeviceExif.ON;
             case "preference_remove_device_exif_keep_datetime":
@@ -2165,11 +2208,17 @@ public class MyApplicationInterface extends BasicApplicationInterface {
 
     @Override
     public void touchEvent(MotionEvent event) {
+        main_activity.getAubControls().onPreviewTouch(event);
         main_activity.getMainUI().closeExposureUI();
         main_activity.getMainUI().closePopup();
         if( main_activity.usingKitKatImmersiveMode() ) {
             main_activity.setImmersiveMode(false);
         }
+    }
+
+    @Override
+    public void onBarcodeScanned(String text, String format) {
+        main_activity.getAubControls().onBarcodeScanned(text, format);
     }
 
     @Override
@@ -3165,6 +3214,8 @@ public class MyApplicationInterface extends BasicApplicationInterface {
         if( MyDebug.LOG )
             Log.d(TAG, "setZoomPref: " + zoom);
         this.zoom_factor = zoom;
+        // can be called on a background thread when the camera preview starts
+        main_activity.runOnUiThread(() -> main_activity.getAubControls().updateZoomChips(zoom));
     }
 
     @Override

@@ -7,7 +7,10 @@ by Aubergine-UX; Mark Harman is not responsible for this modified version.
   also used for the optional "Audio control".
 * Portrait mode uses an on-device segmentation model to separate the subject from the background. This runs
   entirely on your device; photos are never uploaded for processing. The same applies to the CPL, PS2 and
-  2000s modes.
+  2000s modes, and to the QR / barcode scan mode: codes are read on your device, and a scanned link is only
+  opened if you choose to open it.
+* By default, device details (make, model and camera settings) are removed from photo metadata, and location is
+  not recorded. Both can be changed in Settings.
 * Access to files is needed (at least for Android 9 and earlier) to save photos and videos to your device.
 * Location permission is requested only for the optional geotagging features (for photos and videos,
   including stamp and subtitle options). When those options are enabled, your location is stored in the
