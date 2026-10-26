@@ -29,6 +29,17 @@ public class PreferenceKeys {
      */
     public static final String PanoramaInfoPreferenceKey = "done_panorama_info";
 
+    // Aub Camera photo modes
+    public static final String AubCplInfoPreferenceKey = "done_aub_cpl_info";
+    public static final String AubPortraitInfoPreferenceKey = "done_aub_portrait_info";
+    public static final String AubLivePreviewPreferenceKey = "preference_aub_live_preview";
+    public static final String AubPortraitBlurPreferenceKey = "preference_aub_portrait_blur";
+    public static final String AubCplTypePreferenceKey = "preference_aub_cpl_type";
+    public static final String AubCplStrengthPreferenceKey = "preference_aub_cpl_strength";
+    public static final String AubPs2ScanlinesPreferenceKey = "preference_aub_ps2_scanlines";
+    public static final String AubDigicamStampPreferenceKey = "preference_aub_digicam_stamp";
+    public static final String AubDigicamAuthenticResPreferenceKey = "preference_aub_digicam_authentic_res";
+
     /** If this preference is set, no longer show the raw info dialog.
      */
     public static final String RawInfoPreferenceKey = "done_raw_info";

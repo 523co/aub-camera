@@ -159,6 +159,15 @@
             />
 
         <PreferenceScreen
+            android:key="preference_screen_aub_modes"
+            android:title="@string/preference_screen_aub_modes"
+            android:summary="@string/preference_screen_aub_modes_summary"
+            android:icon="@drawable/take_photo_pref"
+            android:persistent="false"
+            android:fragment="net.sourceforge.opencamera.PreferenceSubAubModes"
+            />
+
+        <PreferenceScreen
             android:key="preference_screen_processing_settings"
             android:title="@string/preference_screen_processing_settings"
             android:icon="@drawable/ic_more_horiz_white_48dp"

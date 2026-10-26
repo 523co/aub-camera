@@ -71,7 +71,7 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
 
     public MainActivityTest() {
         //noinspection deprecation
-        super("net.sourceforge.opencamera", MainActivity.class);
+        super("com.aubergineux.aubcamera", MainActivity.class);
     }
 
     private static Intent createDefaultIntent() {

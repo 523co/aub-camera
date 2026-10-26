@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:key="preferences_root">
+
+    <PreferenceCategory
+        android:key="preference_category_aub_general"
+        android:title="@string/preference_category_aub_general">
+
+        <SwitchPreference
+            android:key="preference_aub_live_preview"
+            android:title="@string/preference_aub_live_preview"
+            android:summary="@string/preference_aub_live_preview_summary"
+            android:defaultValue="true"
+            />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="preference_category_aub_portrait"
+        android:title="@string/preference_category_aub_portrait">
+
+        <ListPreference
+            android:key="preference_aub_portrait_blur"
+            android:title="@string/preference_aub_portrait_blur"
+            android:summary="%s"
+            android:entries="@array/preference_aub_portrait_blur_entries"
+            android:entryValues="@array/preference_aub_portrait_blur_values"
+            android:defaultValue="50"
+            />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="preference_category_aub_cpl"
+        android:title="@string/preference_category_aub_cpl">
+
+        <ListPreference
+            android:key="preference_aub_cpl_type"
+            android:title="@string/preference_aub_cpl_type"
+            android:summary="%s"
+            android:entries="@array/preference_aub_cpl_type_entries"
+            android:entryValues="@array/preference_aub_cpl_type_values"
+            android:defaultValue="simulated"
+            />
+
+        <ListPreference
+            android:key="preference_aub_cpl_strength"
+            android:title="@string/preference_aub_cpl_strength"
+            android:summary="%s"
+            android:entries="@array/preference_aub_cpl_strength_entries"
+            android:entryValues="@array/preference_aub_cpl_strength_values"
+            android:defaultValue="60"
+            />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="preference_category_aub_ps2"
+        android:title="@string/preference_category_aub_ps2">
+
+        <SwitchPreference
+            android:key="preference_aub_ps2_scanlines"
+            android:title="@string/preference_aub_ps2_scanlines"
+            android:summary="@string/preference_aub_ps2_scanlines_summary"
+            android:defaultValue="true"
+            />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="preference_category_aub_digicam"
+        android:title="@string/preference_category_aub_digicam">
+
+        <ListPreference
+            android:key="preference_aub_digicam_stamp"
+            android:title="@string/preference_aub_digicam_stamp"
+            android:summary="%s"
+            android:entries="@array/preference_aub_digicam_stamp_entries"
+            android:entryValues="@array/preference_aub_digicam_stamp_values"
+            android:defaultValue="real"
+            />
+
+        <SwitchPreference
+            android:key="preference_aub_digicam_authentic_res"
+            android:title="@string/preference_aub_digicam_authentic_res"
+            android:summary="@string/preference_aub_digicam_authentic_res_summary"
+            android:defaultValue="true"
+            />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -5,12 +5,22 @@ android {
     compileOptions.encoding = 'UTF-8'
 
     defaultConfig {
-        applicationId "net.sourceforge.opencamera"
-        minSdkVersion 21
+        // Aub Camera has its own application id, so it installs alongside Open Camera
+        applicationId "com.aubergineux.aubcamera"
+        // MediaPipe Tasks (used for portrait mode) requires Android 7.0+
+        minSdkVersion 24
         targetSdkVersion 35
         //compileSdkVersion 31 // needed to support appcompat:1.4.0 (which we need for emoji policy support, and not yet ready to target SDK 30)
 
-        testApplicationId "net.sourceforge.opencamera.test"
+        versionCode 1
+        versionName "1.0.0 (based on Open Camera 1.55)"
+
+        // only ship native code for phones (arm64) and the emulator (x86_64), to keep the APK small
+        ndk {
+            abiFilters 'arm64-v8a', 'x86_64'
+        }
+
+        testApplicationId "com.aubergineux.aubcamera.test"
         //testInstrumentationRunner "android.test.InstrumentationTestRunner"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -34,6 +44,10 @@ android {
     namespace 'net.sourceforge.opencamera'
     buildFeatures {
     }
+    // MediaPipe memory-maps its models from assets, so they must not be compressed
+    androidResources {
+        noCompress 'tflite'
+    }
     //useLibrary 'android.test.mock'
 }
 
@@ -52,6 +66,9 @@ dependencies {
 
     implementation 'androidx.exifinterface:exifinterface:1.4.1'
 
+    // Aub Camera: on-device image segmentation for portrait mode (Apache 2.0)
+    implementation 'com.google.mediapipe:tasks-vision:0.10.35'
+
     testImplementation 'junit:junit:4.13.2'
 
     // newer AndroidJUnit4 InstrumentedTest
@@ -65,3 +82,30 @@ java {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
+
+// Aub Camera: fetch the on-device segmentation models used by portrait mode into assets/aub_models.
+// They are downloaded once (and then cached in the source tree, ignored by git) rather than committed.
+def aubModels = [
+        'selfie_multiclass_256x256.tflite': 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite',
+        'deeplab_v3.tflite'               : 'https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/latest/deeplab_v3.tflite',
+]
+def aubModelsDir = file("src/main/assets/aub_models")
+
+tasks.register('downloadAubModels') {
+    description = 'Downloads the MediaPipe segmentation models used by Aub Camera portrait mode.'
+    outputs.dir aubModelsDir
+    doLast {
+        aubModelsDir.mkdirs()
+        aubModels.each { name, url ->
+            File f = new File(aubModelsDir, name)
+            if( !f.exists() || f.length() == 0 ) {
+                logger.lifecycle("Downloading ${name}")
+                File tmp = new File(aubModelsDir, name + ".part")
+                new URL(url).withInputStream { input -> tmp.withOutputStream { it << input } }
+                if( !tmp.renameTo(f) )
+                    throw new GradleException("Failed to save ${name}")
+            }
+        }
+    }
+}
+tasks.named('preBuild') { dependsOn 'downloadAubModels' }

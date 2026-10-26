@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import net.sourceforge.opencamera.aub.AubEffects;
 import net.sourceforge.opencamera.cameracontroller.CameraController;
 import net.sourceforge.opencamera.cameracontroller.RawImage;
 import net.sourceforge.opencamera.preview.ApplicationInterface;
@@ -76,12 +77,38 @@ public class MyApplicationInterface extends BasicApplicationInterface {
         FastBurst,
         NoiseReduction,
         Panorama,
+        // Aub Camera photo modes (single shot, post-processed):
+        Portrait,
+        CPL,
+        PS2,
+        Digicam,
         // camera vendor extensions:
         X_Auto,
         X_HDR,
         X_Night,
         X_Bokeh,
         X_Beauty
+    }
+
+    /** Returns the Aub Camera effect for the photo mode, or AubEffects.Effect.NONE. */
+    public static AubEffects.Effect getAubEffect(PhotoMode photo_mode) {
+        switch( photo_mode ) {
+            case Portrait:
+                return AubEffects.Effect.PORTRAIT;
+            case CPL:
+                return AubEffects.Effect.CPL;
+            case PS2:
+                return AubEffects.Effect.PS2;
+            case Digicam:
+                return AubEffects.Effect.DIGICAM;
+            default:
+                return AubEffects.Effect.NONE;
+        }
+    }
+
+    /** Whether the photo mode is one of the Aub Camera modes. */
+    public static boolean isAubPhotoMode(PhotoMode photo_mode) {
+        return getAubEffect(photo_mode) != AubEffects.Effect.NONE;
     }
 
     private final MainActivity main_activity;
@@ -669,6 +696,8 @@ public class MyApplicationInterface extends BasicApplicationInterface {
             return 100;
         else if( photo_mode == PhotoMode.NoiseReduction )
             return 100;
+        else if( isAubPhotoMode(photo_mode) )
+            return 100; // post-processed, so capture at full quality; saved at the user's quality setting
 
         if( getImageFormatPref() != ImageSaver.Request.ImageFormat.STD )
             return 100;
@@ -1747,6 +1776,18 @@ public class MyApplicationInterface extends BasicApplicationInterface {
         boolean panorama = photo_mode_pref.equals("preference_photo_mode_panorama");
         if( panorama && !main_activity.getPreview().isVideo() && main_activity.supportsPanorama() )
             return PhotoMode.Panorama;
+        if( main_activity.supportsAubPhotoModes() ) {
+            switch( photo_mode_pref ) {
+                case "preference_photo_mode_aub_portrait":
+                    return PhotoMode.Portrait;
+                case "preference_photo_mode_aub_cpl":
+                    return PhotoMode.CPL;
+                case "preference_photo_mode_aub_ps2":
+                    return PhotoMode.PS2;
+                case "preference_photo_mode_aub_digicam":
+                    return PhotoMode.Digicam;
+            }
+        }
         boolean x_auto = photo_mode_pref.equals("preference_photo_mode_x_auto");
         if( x_auto && !main_activity.getPreview().isVideo() && main_activity.supportsCameraExtension(CameraExtensionCharacteristics.EXTENSION_AUTOMATIC) )
             return PhotoMode.X_Auto;
@@ -1777,6 +1818,8 @@ public class MyApplicationInterface extends BasicApplicationInterface {
                 PhotoMode photo_mode = getPhotoMode();
                 if( photo_mode == PhotoMode.NoiseReduction || photo_mode == PhotoMode.HDR || photo_mode == PhotoMode.Panorama )
                     return false; // not supported for these photo modes
+                if( isAubPhotoMode(photo_mode) )
+                    return false; // Aub Camera modes re-encode the photo, which would lose the gain map
                 // n.b., JPEG R won't be supported by x- extension modes either, although this is automatically handled by Preview
                 return true;
             }
@@ -3596,6 +3639,9 @@ public class MyApplicationInterface extends BasicApplicationInterface {
             }
             String preference_hdr_contrast_enhancement = sharedPreferences.getString(PreferenceKeys.HDRContrastEnhancementPreferenceKey, "preference_hdr_contrast_enhancement_smart");
 
+            AubEffects.Effect aub_effect = getAubEffect(photo_mode);
+            AubEffects.Params aub_params = aub_effect == AubEffects.Effect.NONE ? null : AubEffects.readParams(sharedPreferences, aub_effect, current_date);
+
             success = imageSaver.saveImageJpeg(do_in_background, processType,
                     force_suffix,
                     // N.B., n_capture_images will be 1 for first image, not 0, so subtract 1 so we start off from _0.
@@ -3624,7 +3670,8 @@ public class MyApplicationInterface extends BasicApplicationInterface {
                     store_location, location, store_geo_direction, geo_direction,
                     pitch_angle, store_ypr,
                     custom_tag_artist, custom_tag_copyright,
-                    sample_factor);
+                    sample_factor,
+                    aub_params);
         }
 
         if( MyDebug.LOG )

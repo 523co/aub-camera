@@ -38,6 +38,20 @@ public class PreferenceSubLicences extends PreferenceSubScreen {
         }
 
         {
+            final Preference pref = findPreference("preference_licence_mediapipe");
+            pref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference arg0) {
+                    if( MyDebug.LOG )
+                        Log.d(TAG, "user clicked mediapipe licence");
+                    // MediaPipe and its segmentation models are under the Apache licence 2.0 (same text as for AndroidX)
+                    displayTextDialog(R.string.preference_licence_mediapipe, "androidx_LICENSE-2.0.txt");
+                    return false;
+                }
+            });
+        }
+
+        {
             final Preference pref = findPreference("preference_licence_androidx");
             pref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override

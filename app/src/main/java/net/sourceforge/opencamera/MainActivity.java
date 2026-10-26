@@ -1,5 +1,6 @@
 package net.sourceforge.opencamera;
 
+import net.sourceforge.opencamera.aub.PortraitSegmenter;
 import net.sourceforge.opencamera.cameracontroller.CameraController;
 import net.sourceforge.opencamera.cameracontroller.CameraControllerManager;
 import net.sourceforge.opencamera.cameracontroller.CameraControllerManager2;
@@ -1277,6 +1278,11 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
         // that a new image appears after onPause/onStop is called, in which case we want to wait until images are saved,
         waitUntilImageQueueEmpty();
 
+        if( activity_count == 0 ) {
+            // free the on-device segmentation models used by portrait mode (only once no image saving is pending)
+            PortraitSegmenter.close();
+        }
+
         preview.onDestroy();
         if( applicationInterface != null ) {
             applicationInterface.onDestroy();
@@ -1335,7 +1341,8 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
         if( MyDebug.LOG )
             Log.d(TAG, "launchOnlineHelp");
         // if we change this, remember that any page linked to must abide by Google Play developer policies!
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(getOnlineHelpUrl("")));
+        // Aub Camera: help lives in the project README (which links to the Open Camera manual for the shared features)
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/523co/aub-camera#readme"));
         startActivity(browserIntent);
     }
 
@@ -1344,7 +1351,8 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
             Log.d(TAG, "launchOnlinePrivacyPolicy");
         // if we change this, remember that any page linked to must abide by Google Play developer policies!
         //Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(getOnlineHelpUrl("index.html#privacy")));
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(getOnlineHelpUrl("privacy_oc.html")));
+        // Aub Camera has its own privacy policy, as it is a modified version of Open Camera
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/523co/aub-camera/blob/main/PRIVACY.md"));
         startActivity(browserIntent);
     }
 
@@ -1352,7 +1360,7 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
         if( MyDebug.LOG )
             Log.d(TAG, "launchOnlineLicences");
         // if we change this, remember that any page linked to must abide by Google Play developer policies!
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(getOnlineHelpUrl("#licence")));
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/523co/aub-camera#licence"));
         startActivity(browserIntent);
     }
 
@@ -6290,6 +6298,13 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
         return this.supports_auto_stabilise;
     }
 
+    /** Whether the Aub Camera photo modes (Portrait, CPL, PS2, Digicam) are available. They post-process
+     *  the JPEG, so need JPEG output - they're always available as RAW isn't used in these modes.
+     */
+    public boolean supportsAubPhotoModes() {
+        return true;
+    }
+
     public boolean supportsDRO() {
         if( applicationInterface.isRawOnly(MyApplicationInterface.PhotoMode.DRO) )
             return false; // if not saving JPEGs, no point having DRO mode, as it won't affect the RAW images
@@ -6501,6 +6516,18 @@ public class MainActivity extends AppCompatActivity implements PreferenceFragmen
                 break;
             case X_Beauty:
                 photo_mode_string = getResources().getString(R.string.photo_mode_x_beauty_full);
+                break;
+            case Portrait:
+                photo_mode_string = getResources().getString(R.string.photo_mode_aub_portrait_full);
+                break;
+            case CPL:
+                photo_mode_string = getResources().getString(R.string.photo_mode_aub_cpl_full);
+                break;
+            case PS2:
+                photo_mode_string = getResources().getString(R.string.photo_mode_aub_ps2_full);
+                break;
+            case Digicam:
+                photo_mode_string = getResources().getString(R.string.photo_mode_aub_digicam_full);
                 break;
         }
         return photo_mode_string;

@@ -66,6 +66,8 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import net.sourceforge.opencamera.aub.AubEffects;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlSerializer;
 
@@ -200,6 +202,7 @@ public class ImageSaver extends Thread {
         final String custom_tag_artist;
         final String custom_tag_copyright;
         final int sample_factor; // sampling factor for thumbnail, higher means lower quality
+        AubEffects.Params aub_params; // Aub Camera photo mode effect to apply (Portrait, CPL, PS2, Digicam), or null
 
         Request(Type type,
                 ProcessType process_type,
@@ -283,7 +286,7 @@ public class ImageSaver extends Thread {
          *  data will not be copied.
          */
         Request copy() {
-            return new Request(this.type,
+            Request copy = new Request(this.type,
                     this.process_type,
                     this.force_suffix,
                     this.suffix_offset,
@@ -311,6 +314,8 @@ public class ImageSaver extends Thread {
                     this.custom_tag_artist,
                     this.custom_tag_copyright,
                     this.sample_factor);
+            copy.aub_params = this.aub_params;
+            return copy;
         }
     }
 
@@ -669,7 +674,8 @@ public class ImageSaver extends Thread {
                           double pitch_angle, boolean store_ypr,
                           String custom_tag_artist,
                           String custom_tag_copyright,
-                          int sample_factor) {
+                          int sample_factor,
+                          AubEffects.Params aub_params) {
         if( MyDebug.LOG ) {
             Log.d(TAG, "saveImageJpeg");
             Log.d(TAG, "do_in_background? " + do_in_background);
@@ -703,7 +709,8 @@ public class ImageSaver extends Thread {
                 pitch_angle, store_ypr,
                 custom_tag_artist,
                 custom_tag_copyright,
-                sample_factor);
+                sample_factor,
+                aub_params);
     }
 
     /** Saves a RAW photo.
@@ -748,7 +755,8 @@ public class ImageSaver extends Thread {
                 false, Request.RemoveDeviceExif.OFF, false, null, false, 0.0,
                 0.0, false,
                 null, null,
-                1);
+                1,
+                null);
     }
 
     private Request pending_image_average_request = null;
@@ -896,7 +904,8 @@ public class ImageSaver extends Thread {
                               double pitch_angle, boolean store_ypr,
                               String custom_tag_artist,
                               String custom_tag_copyright,
-                              int sample_factor) {
+                              int sample_factor,
+                              AubEffects.Params aub_params) {
         if( MyDebug.LOG ) {
             Log.d(TAG, "saveImage");
             Log.d(TAG, "do_in_background? " + do_in_background);
@@ -933,6 +942,7 @@ public class ImageSaver extends Thread {
                 custom_tag_artist,
                 custom_tag_copyright,
                 sample_factor);
+        request.aub_params = aub_params;
 
         if( do_in_background ) {
             if( MyDebug.LOG )
@@ -2165,6 +2175,7 @@ public class ImageSaver extends Thread {
 
             // apply any post-processing
             Request preshot_request = request.copy();
+            preshot_request.aub_params = null; // Aub Camera effects are too slow to apply to every pre-shot frame
             if( preshot_request.is_front_facing ) {
                 // we need to mirror for front camera (or not mirror, if the mirror flag was set)
                 // for front camera, the preview will typically be mirrored, whilst saved photos are not mirrored, so we need to undo this to be
@@ -2383,6 +2394,9 @@ public class ImageSaver extends Thread {
             String filename_suffix = (multiple_jpegs || request.force_suffix) ? suffix + (i + request.suffix_offset) : "";
             if( request.process_type == Request.ProcessType.X_NIGHT ) {
                 filename_suffix = "_Night" + filename_suffix;
+            }
+            if( request.aub_params != null && request.aub_params.altersImage() ) {
+                filename_suffix = request.aub_params.filenameSuffix() + filename_suffix;
             }
             boolean share_image = share && (i == mid_image);
             if( !saveSingleImageNow(request, image, null, filename_suffix, update_thumbnail, share_image, false, false) ) {
@@ -2932,6 +2946,20 @@ public class ImageSaver extends Thread {
         }
         if( request.mirror ) {
             bitmap = mirrorImage(data, bitmap);
+        }
+        if( request.aub_params != null && request.aub_params.altersImage() ) {
+            // Aub Camera photo modes: Portrait, CPL, PS2 and Digicam
+            if( bitmap == null ) {
+                bitmap = loadBitmapWithRotation(data, true);
+                if( bitmap == null ) {
+                    System.gc();
+                    throw new IOException();
+                }
+            }
+            bitmap = AubEffects.applyToPhoto(main_activity, bitmap, request.aub_params);
+            if( MyDebug.LOG ) {
+                Log.d(TAG, "Save single image performance: time after Aub effect: " + (System.currentTimeMillis() - time_s));
+            }
         }
         if( request.image_format != Request.ImageFormat.STD && bitmap == null ) {
             if( MyDebug.LOG )

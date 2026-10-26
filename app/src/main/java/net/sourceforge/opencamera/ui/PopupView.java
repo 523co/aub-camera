@@ -207,6 +207,16 @@ public class PopupView extends LinearLayout {
                 photo_modes.add(getResources().getString(use_expanded_menu ? R.string.photo_mode_panorama_full : R.string.photo_mode_panorama));
                 photo_mode_values.add(MyApplicationInterface.PhotoMode.Panorama);
             }
+            if( main_activity.supportsAubPhotoModes() ) {
+                photo_modes.add(getResources().getString(use_expanded_menu ? R.string.photo_mode_aub_portrait_full : R.string.photo_mode_aub_portrait));
+                photo_mode_values.add(MyApplicationInterface.PhotoMode.Portrait);
+                photo_modes.add(getResources().getString(use_expanded_menu ? R.string.photo_mode_aub_cpl_full : R.string.photo_mode_aub_cpl));
+                photo_mode_values.add(MyApplicationInterface.PhotoMode.CPL);
+                photo_modes.add(getResources().getString(use_expanded_menu ? R.string.photo_mode_aub_ps2_full : R.string.photo_mode_aub_ps2));
+                photo_mode_values.add(MyApplicationInterface.PhotoMode.PS2);
+                photo_modes.add(getResources().getString(use_expanded_menu ? R.string.photo_mode_aub_digicam_full : R.string.photo_mode_aub_digicam));
+                photo_mode_values.add(MyApplicationInterface.PhotoMode.Digicam);
+            }
             if( main_activity.supportsFastBurst() ) {
                 photo_modes.add(getResources().getString(use_expanded_menu ? R.string.photo_mode_fast_burst_full : R.string.photo_mode_fast_burst));
                 photo_mode_values.add(MyApplicationInterface.PhotoMode.FastBurst);
@@ -1137,6 +1147,18 @@ public class PopupView extends LinearLayout {
                 case X_Beauty:
                     toast_message = getResources().getString(R.string.photo_mode_x_beauty_full);
                     break;
+                case Portrait:
+                    toast_message = getResources().getString(R.string.photo_mode_aub_portrait_full);
+                    break;
+                case CPL:
+                    toast_message = getResources().getString(R.string.photo_mode_aub_cpl_full);
+                    break;
+                case PS2:
+                    toast_message = getResources().getString(R.string.photo_mode_aub_ps2_full);
+                    break;
+                case Digicam:
+                    toast_message = getResources().getString(R.string.photo_mode_aub_digicam_full);
+                    break;
             }
             final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(main_activity);
             SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -1180,6 +1202,18 @@ public class PopupView extends LinearLayout {
                 case X_Beauty:
                     editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_x_beauty");
                     break;
+                case Portrait:
+                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_aub_portrait");
+                    break;
+                case CPL:
+                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_aub_cpl");
+                    break;
+                case PS2:
+                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_aub_ps2");
+                    break;
+                case Digicam:
+                    editor.putString(PreferenceKeys.PhotoModePreferenceKey, "preference_photo_mode_aub_digicam");
+                    break;
                 default:
                     if (MyDebug.LOG)
                         Log.e(TAG, "unknown new_photo_mode: " + new_photo_mode);
@@ -1199,6 +1233,20 @@ public class PopupView extends LinearLayout {
                 boolean done_panorama_info = sharedPreferences.contains(PreferenceKeys.PanoramaInfoPreferenceKey);
                 if( !done_panorama_info ) {
                     main_activity.getMainUI().showInfoDialog(R.string.photo_mode_panorama_full, R.string.panorama_info, PreferenceKeys.PanoramaInfoPreferenceKey);
+                    done_dialog = true;
+                }
+            }
+            else if( new_photo_mode == MyApplicationInterface.PhotoMode.CPL ) {
+                boolean done_cpl_info = sharedPreferences.contains(PreferenceKeys.AubCplInfoPreferenceKey);
+                if( !done_cpl_info ) {
+                    main_activity.getMainUI().showInfoDialog(R.string.photo_mode_aub_cpl_full, R.string.aub_cpl_info, PreferenceKeys.AubCplInfoPreferenceKey);
+                    done_dialog = true;
+                }
+            }
+            else if( new_photo_mode == MyApplicationInterface.PhotoMode.Portrait ) {
+                boolean done_portrait_info = sharedPreferences.contains(PreferenceKeys.AubPortraitInfoPreferenceKey);
+                if( !done_portrait_info ) {
+                    main_activity.getMainUI().showInfoDialog(R.string.photo_mode_aub_portrait_full, R.string.aub_portrait_info, PreferenceKeys.AubPortraitInfoPreferenceKey);
                     done_dialog = true;
                 }
             }

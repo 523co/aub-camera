@@ -21,6 +21,7 @@ import net.sourceforge.opencamera.MyDebug;
 import net.sourceforge.opencamera.PreferenceKeys;
 import net.sourceforge.opencamera.preview.ApplicationInterface;
 import net.sourceforge.opencamera.R;
+import net.sourceforge.opencamera.aub.AubEffects;
 import net.sourceforge.opencamera.cameracontroller.CameraController;
 import net.sourceforge.opencamera.preview.Preview;
 
@@ -118,6 +119,15 @@ public class DrawPreview {
     private Bitmap ghost_selected_image_bitmap;
     private int ghost_image_alpha;
     private boolean want_histogram;
+    // Aub Camera
+    private AubEffects.Params aub_params; // settings of the current Aub Camera photo mode, or null
+    private boolean want_aub_live; // live look preview
+    private boolean want_aub_glare_meter; // physical CPL helper
+    private final float [] aub_glare_history = new float[64]; // ring buffer of glare scores
+    private final long [] aub_glare_history_time = new long[64];
+    private int aub_glare_history_pos;
+    private float aub_glare_smoothed = -1.0f;
+    private final RectF aub_meter_rect = new RectF();
     private Preview.HistogramType histogram_type;
     private boolean want_zebra_stripes;
     private int zebra_stripes_threshold;
@@ -794,6 +804,22 @@ public class DrawPreview {
         focus_peaking_color_pref = Color.parseColor(focus_peaking_color);
 
         want_pre_shots = applicationInterface.getPreShotsPref(photoMode);
+
+        {
+            AubEffects.Effect aub_effect = MyApplicationInterface.getAubEffect(photoMode);
+            if( aub_effect != AubEffects.Effect.NONE && !applicationInterface.isVideoPref() && main_activity.supportsPreviewBitmaps() ) {
+                aub_params = AubEffects.readParams(sharedPreferences, aub_effect, null);
+                want_aub_live = sharedPreferences.getBoolean(PreferenceKeys.AubLivePreviewPreferenceKey, true) && aub_params.altersImage();
+                want_aub_glare_meter = aub_effect == AubEffects.Effect.CPL && aub_params.cpl_type != AubEffects.CplType.SIMULATED;
+            }
+            else {
+                aub_params = null;
+                want_aub_live = false;
+                want_aub_glare_meter = false;
+            }
+            aub_glare_smoothed = -1.0f;
+            java.util.Arrays.fill(aub_glare_history_time, 0);
+        }
 
         last_camera_id_time = 0; // in case camera id changed
         last_view_angles_time = 0; // force view angles to be recomputed
@@ -2824,8 +2850,8 @@ public class DrawPreview {
         int ui_rotation = preview.getUIRotation();
 
         // set up preview bitmaps (histogram etc)
-        boolean want_preview_bitmap = want_histogram || want_zebra_stripes || want_focus_peaking || want_pre_shots;
-        boolean use_preview_bitmap_small = want_histogram || want_zebra_stripes || want_focus_peaking;
+        boolean want_preview_bitmap = want_histogram || want_zebra_stripes || want_focus_peaking || want_pre_shots || want_aub_live || want_aub_glare_meter;
+        boolean use_preview_bitmap_small = want_histogram || want_zebra_stripes || want_focus_peaking || want_aub_live || want_aub_glare_meter;
         boolean use_preview_bitmap_full = want_pre_shots;
         if( want_preview_bitmap != preview.isPreviewBitmapEnabled() || use_preview_bitmap_small != preview.usePreviewBitmapSmall() || use_preview_bitmap_full != preview.usePreviewBitmapFull() ) {
             if( want_preview_bitmap ) {
@@ -2854,6 +2880,11 @@ public class DrawPreview {
                 preview.enablePreShots();
             else
                 preview.disablePreShots();
+
+            preview.setAubLiveEffect(want_aub_live ? aub_params : null, want_aub_glare_meter);
+        }
+        else if( preview.wantsAubPreviewBitmap() ) {
+            preview.setAubLiveEffect(null, false);
         }
 
         // See documentation for CameraController.shouldCoverPreview().
@@ -2979,6 +3010,19 @@ public class DrawPreview {
         if( preview.isPreviewBitmapEnabled() && !show_last_image ) {
             // draw additional real-time effects
 
+            // Aub Camera live look preview (drawn first, so zebra stripes and focus peaking go on top)
+            Bitmap aub_effect_bitmap = want_aub_live ? preview.getAubEffectBitmap() : null;
+            if( aub_effect_bitmap != null && !aub_effect_bitmap.isRecycled() ) {
+                setLastImageMatrix(canvas, aub_effect_bitmap, 0, false);
+                p.setAlpha(255);
+                // the PS2 look should stay crisp and blocky when scaled up
+                boolean filter = aub_params == null || aub_params.effect != AubEffects.Effect.PS2;
+                boolean old_filter = p.isFilterBitmap();
+                p.setFilterBitmap(filter);
+                canvas.drawBitmap(aub_effect_bitmap, last_image_matrix, p);
+                p.setFilterBitmap(old_filter);
+            }
+
             // draw zebra stripes
             Bitmap zebra_stripes_bitmap = preview.getZebraStripesBitmap();
             if( zebra_stripes_bitmap != null ) {
@@ -3006,6 +3050,10 @@ public class DrawPreview {
         doThumbnailAnimation(canvas, time_ms);
 
         drawUI(canvas, device_ui_rotation, time_ms);
+
+        if( want_aub_glare_meter && camera_controller != null && !preview.isPreviewPaused() && !show_last_image ) {
+            drawAubGlareMeter(canvas, ui_rotation, time_ms);
+        }
 
         drawAngleLines(canvas, device_ui_rotation, time_ms);
 
@@ -3157,6 +3205,71 @@ public class DrawPreview {
                 last_image_matrix.preScale(-1.0f, 1.0f, bitmap.getWidth()/2.0f, 0.0f);
             }
         }
+    }
+
+    /** Aub Camera: live glare meter for a physical CPL filter. The bar shows how much glare there is
+     *  compared to the range seen over the last few seconds while rotating the filter; it turns green
+     *  with "best" when the current angle is at (or very near) the minimum.
+     */
+    private void drawAubGlareMeter(Canvas canvas, int ui_rotation, long time_ms) {
+        float score = main_activity.getPreview().getAubGlareScore();
+        if( score < 0.0f )
+            return;
+        // smooth, and record history
+        aub_glare_smoothed = aub_glare_smoothed < 0.0f ? score : aub_glare_smoothed * 0.7f + score * 0.3f;
+        int last = (aub_glare_history_pos + aub_glare_history.length - 1) % aub_glare_history.length;
+        if( time_ms - aub_glare_history_time[last] >= 100 ) {
+            aub_glare_history[aub_glare_history_pos] = aub_glare_smoothed;
+            aub_glare_history_time[aub_glare_history_pos] = time_ms;
+            aub_glare_history_pos = (aub_glare_history_pos + 1) % aub_glare_history.length;
+        }
+        final long window_ms = 6000;
+        float min = Float.MAX_VALUE, max = -Float.MAX_VALUE;
+        for(int i=0;i<aub_glare_history.length;i++) {
+            if( aub_glare_history_time[i] != 0 && time_ms - aub_glare_history_time[i] <= window_ms ) {
+                min = Math.min(min, aub_glare_history[i]);
+                max = Math.max(max, aub_glare_history[i]);
+            }
+        }
+        if( min == Float.MAX_VALUE ) {
+            min = max = aub_glare_smoothed;
+        }
+        boolean varied = max > 1.0e-3f && (max - min) / max > 0.04f; // has the user been rotating the filter?
+        float frac = varied ? (aub_glare_smoothed - min) / (max - min) : 0.5f;
+        frac = Math.max(0.0f, Math.min(1.0f, frac));
+        boolean best = varied && frac <= 0.08f;
+
+        canvas.save();
+        canvas.rotate(ui_rotation, canvas.getWidth()/2.0f, canvas.getHeight()/2.0f);
+        final boolean rotated = ui_rotation == 90 || ui_rotation == 270;
+        final float view_w = rotated ? canvas.getHeight() : canvas.getWidth();
+        final float view_h = rotated ? canvas.getWidth() : canvas.getHeight();
+        final float cx = canvas.getWidth()/2.0f;
+        final float cy = canvas.getHeight()/2.0f;
+        final float top = cy - view_h/2.0f + view_h * 0.16f;
+        final float bar_w = Math.min(view_w, view_h) * 0.42f;
+        final float bar_h = 8 * scale_dp;
+
+        p.setTextSize(14 * scale_font + 0.5f);
+        p.setTextAlign(Paint.Align.CENTER);
+        String label = getContext().getResources().getString(R.string.aub_cpl_meter_label) + (best ? " ✓ " + getContext().getResources().getString(R.string.aub_cpl_meter_best) : "");
+        if( !varied )
+            label = getContext().getResources().getString(R.string.aub_cpl_meter_hint);
+        applicationInterface.drawTextWithBackground(canvas, p, label, best ? Color.rgb(129, 199, 132) : Color.WHITE, Color.BLACK, (int)cx, (int)top, MyApplicationInterface.Alignment.ALIGNMENT_BOTTOM);
+
+        float bar_top = top + 6 * scale_dp;
+        aub_meter_rect.set(cx - bar_w/2.0f, bar_top, cx + bar_w/2.0f, bar_top + bar_h);
+        p.setStyle(Paint.Style.FILL);
+        p.setColor(Color.BLACK);
+        p.setAlpha(110);
+        canvas.drawRoundRect(aub_meter_rect, bar_h/2.0f, bar_h/2.0f, p);
+        aub_meter_rect.set(cx - bar_w/2.0f, bar_top, cx - bar_w/2.0f + Math.max(bar_h, bar_w * (0.06f + 0.94f * frac)), bar_top + bar_h);
+        p.setColor(best ? Color.rgb(102, 187, 106) : Color.rgb(255, 202, 40));
+        p.setAlpha(230);
+        canvas.drawRoundRect(aub_meter_rect, bar_h/2.0f, bar_h/2.0f, p);
+        p.setAlpha(255);
+        p.setTextAlign(Paint.Align.LEFT);
+        canvas.restore();
     }
 
     private void drawGyroSpot(Canvas canvas, float distance_x, float distance_y, float dir_x, float dir_y, int radius_dp, boolean outline) {

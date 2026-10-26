@@ -1042,4 +1042,53 @@
         <item>preference_save_preshots_off</item>
         <item>preference_save_preshots_on</item>
     </string-array>
+
+    <!-- Aub Camera -->
+    <string-array name="preference_aub_portrait_blur_entries">
+        <item>@string/preference_aub_strength_light</item>
+        <item>@string/preference_aub_strength_medium</item>
+        <item>@string/preference_aub_strength_strong</item>
+        <item>@string/preference_aub_strength_max</item>
+    </string-array>
+    <string-array name="preference_aub_portrait_blur_values" translatable="false">
+        <item>20</item>
+        <item>50</item>
+        <item>75</item>
+        <item>100</item>
+    </string-array>
+
+    <string-array name="preference_aub_cpl_type_entries">
+        <item>@string/preference_aub_cpl_type_simulated</item>
+        <item>@string/preference_aub_cpl_type_physical</item>
+        <item>@string/preference_aub_cpl_type_physical_plus_sim</item>
+    </string-array>
+    <string-array name="preference_aub_cpl_type_values" translatable="false">
+        <item>simulated</item>
+        <item>physical</item>
+        <item>physical_plus_sim</item>
+    </string-array>
+
+    <string-array name="preference_aub_cpl_strength_entries">
+        <item>@string/preference_aub_strength_light</item>
+        <item>@string/preference_aub_strength_medium</item>
+        <item>@string/preference_aub_strength_strong</item>
+        <item>@string/preference_aub_strength_max</item>
+    </string-array>
+    <string-array name="preference_aub_cpl_strength_values" translatable="false">
+        <item>30</item>
+        <item>60</item>
+        <item>80</item>
+        <item>100</item>
+    </string-array>
+
+    <string-array name="preference_aub_digicam_stamp_entries">
+        <item>@string/preference_aub_digicam_stamp_off</item>
+        <item>@string/preference_aub_digicam_stamp_real</item>
+        <item>@string/preference_aub_digicam_stamp_retro</item>
+    </string-array>
+    <string-array name="preference_aub_digicam_stamp_values" translatable="false">
+        <item>off</item>
+        <item>real</item>
+        <item>retro</item>
+    </string-array>
 </resources>

@@ -8,6 +8,8 @@ import net.sourceforge.opencamera.MyDebug;
 import net.sourceforge.opencamera.R;
 import net.sourceforge.opencamera.TakePhoto;
 import net.sourceforge.opencamera.ToastBoxer;
+import net.sourceforge.opencamera.aub.AubEffects;
+import net.sourceforge.opencamera.aub.CplFilter;
 import net.sourceforge.opencamera.cameracontroller.CameraController;
 import net.sourceforge.opencamera.cameracontroller.CameraController1;
 import net.sourceforge.opencamera.cameracontroller.CameraController2;
@@ -156,6 +158,12 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
     private HistogramType histogram_type = HistogramType.HISTOGRAM_TYPE_VALUE;
     private int [] histogram;
     private long last_histogram_time_ms; // time the last histogram was updated
+
+    // Aub Camera: live look preview and CPL glare meter, generated from preview_bitmap
+    private volatile AubEffects.Params aub_live_params; // effect to preview live, or null
+    private volatile boolean want_aub_glare_meter;
+    private Bitmap aub_effect_bitmap; // only accessed on UI thread
+    private float aub_glare_score = -1.0f; // only accessed on UI thread; < 0 if not available
 
     private boolean want_zebra_stripes; // whether to generate zebra stripes bitmap, requires want_preview_bitmap==true and use_preview_bitmap_small==true
     private int zebra_stripes_threshold; // pixels with max rgb value equal to or greater than this threshold are marked with zebra stripes
@@ -8465,6 +8473,11 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
 
         freeZebraStripesBitmap();
         freeFocusPeakingBitmap();
+        if( aub_effect_bitmap != null ) {
+            aub_effect_bitmap.recycle();
+            aub_effect_bitmap = null;
+        }
+        aub_glare_score = -1.0f;
     }
 
     private void recreatePreviewBitmap() {
@@ -8612,6 +8625,34 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
         return this.histogram;
     }
 
+    /** Aub Camera: sets the effect to show live in the viewfinder (null for none), and whether to
+     *  compute the glare score for the physical CPL helper. Requires the preview bitmap to be enabled.
+     */
+    public void setAubLiveEffect(AubEffects.Params params, boolean want_glare_meter) {
+        this.aub_live_params = params;
+        this.want_aub_glare_meter = want_glare_meter;
+        if( params == null && aub_effect_bitmap != null ) {
+            aub_effect_bitmap.recycle();
+            aub_effect_bitmap = null;
+        }
+        if( !want_glare_meter )
+            aub_glare_score = -1.0f;
+    }
+
+    public boolean wantsAubPreviewBitmap() {
+        return aub_live_params != null || want_aub_glare_meter;
+    }
+
+    /** The live look preview frame, rotated for display like the zebra stripes bitmap, or null. */
+    public Bitmap getAubEffectBitmap() {
+        return aub_effect_bitmap;
+    }
+
+    /** Glare score for the physical CPL helper (lower is less glare), or a negative value if not available. */
+    public float getAubGlareScore() {
+        return aub_glare_score;
+    }
+
     public void enableZebraStripes(int zebra_stripes_threshold, int zebra_stripes_color_foreground, int zebra_stripes_color_background) {
         this.want_zebra_stripes = true;
         this.zebra_stripes_threshold = zebra_stripes_threshold;
@@ -8707,6 +8748,9 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
         Bitmap new_zebra_stripes_bitmap;
         Bitmap new_focus_peaking_bitmap;
         Bitmap preview_bitmap_full_copy;
+        Bitmap new_aub_effect_bitmap;
+        boolean aub_effect_attempted;
+        float aub_glare_score = -1.0f;
     }
 
     // use static class, and WeakReferences, to avoid memory leaks: https://stackoverflow.com/questions/44309241/warning-this-asynctask-class-should-be-static-or-leaks-might-occur/46166223
@@ -8923,6 +8967,33 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
                         Log.d(TAG, "time for focus peaking: " + (System.currentTimeMillis() - debug_time_focus_peaking));
                     }
                 }
+
+                // Aub Camera
+                AubEffects.Params aub_params = preview.aub_live_params;
+                if( preview_bitmap != null && aub_params != null && !preview.isTakingPhoto() ) {
+                    result.aub_effect_attempted = true;
+                    try {
+                        // rotate first, so that the frame is upright on screen (needed for the portrait segmentation model)
+                        int rotation_degrees = preview.getDisplayRotationDegrees(false);
+                        Matrix matrix = new Matrix();
+                        matrix.postRotate(-rotation_degrees);
+                        Bitmap rotated = Bitmap.createBitmap(preview_bitmap, 0, 0, preview_bitmap.getWidth(), preview_bitmap.getHeight(), matrix, false);
+                        result.new_aub_effect_bitmap = AubEffects.applyToPreview(activity, rotated, aub_params);
+                        if( rotated != preview_bitmap && rotated != result.new_aub_effect_bitmap )
+                            rotated.recycle();
+                    }
+                    catch(RuntimeException | OutOfMemoryError e) {
+                        // never let a preview effect take down the camera
+                        Log.e(TAG, "failed to generate aub effect preview", e);
+                        result.new_aub_effect_bitmap = null;
+                    }
+                }
+                if( preview_bitmap != null && preview.want_aub_glare_meter ) {
+                    int n = preview_bitmap.getWidth() * preview_bitmap.getHeight();
+                    int [] pixels = new int[n];
+                    preview_bitmap.getPixels(pixels, 0, preview_bitmap.getWidth(), 0, 0, preview_bitmap.getWidth(), preview_bitmap.getHeight());
+                    result.aub_glare_score = CplFilter.glareScore(pixels, n);
+                }
             }
             catch(IllegalStateException e) {
                 MyDebug.logStackTrace(TAG, "failed to getBitmap", e);
@@ -8970,6 +9041,20 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
             }
             preview.focus_peaking_bitmap = result.new_focus_peaking_bitmap;
 
+            if( result.aub_effect_attempted || preview.aub_live_params == null ) {
+                if( preview.aub_effect_bitmap != null ) {
+                    preview.aub_effect_bitmap.recycle();
+                }
+                if( preview.aub_live_params == null && result.new_aub_effect_bitmap != null ) {
+                    // effect was switched off while we were processing
+                    result.new_aub_effect_bitmap.recycle();
+                    result.new_aub_effect_bitmap = null;
+                }
+                preview.aub_effect_bitmap = result.new_aub_effect_bitmap;
+            }
+            if( preview.want_aub_glare_meter )
+                preview.aub_glare_score = result.aub_glare_score;
+
             if( preview.want_pre_shots && result.preview_bitmap_full_copy != null ) {
                 if( preview.isTakingPhoto() ) {
                     // don't add pre-shots once already taking a photo (otherwise we may have pre-shots after the photo was taken)
@@ -9005,7 +9090,7 @@ public class Preview implements SurfaceHolder.Callback, TextureView.SurfaceTextu
         final int refresh_histogram_rate_ms = 200;
         // if want_pre_shots==true, this should take priority over other options as it affects the interval between the pre-shots
         // but the value shouldn't be too long, as then zebra stripes or focus peaking (if they are enabled) would be too jerky
-        final long refresh_time = want_pre_shots ? preshot_interval_ms : (want_zebra_stripes || want_focus_peaking) ? 83 : refresh_histogram_rate_ms;
+        final long refresh_time = want_pre_shots ? preshot_interval_ms : (want_zebra_stripes || want_focus_peaking || aub_live_params != null) ? 83 : refresh_histogram_rate_ms;
         long time_now = System.currentTimeMillis();
         if( want_preview_bitmap &&
                 ( ( use_preview_bitmap_small && preview_bitmap != null ) || ( use_preview_bitmap_full && preview_bitmap_full_w != -1 && preview_bitmap_full_h != -1 ) )
